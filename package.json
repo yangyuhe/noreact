@@ -1,0 +1,29 @@
+{
+  "name": "serverrender",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": " node dist/start.js",
+    "watch": "rm -rf ./dist && node watch.js &&  tsc --watch",
+    "bundle": "webpack --config webpack.config.js",
+    "serve": "webpack-dev-server --config webpack.config.js --hot",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^10.12.11",
+    "ts-loader": "^5.3.1",
+    "typescript": "^3.2.2",
+    "webpack": "^4.27.1",
+    "webpack-cli": "^3.1.2",
+    "webpack-dev-server": "^3.1.10"
+  },
+  "dependencies": {
+    "@types/jquery": "^3.3.24",
+    "jquery": "^3.3.1",
+    "node-sass": "^4.11.0"
+  }
+}
