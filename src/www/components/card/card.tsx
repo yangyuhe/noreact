@@ -3,7 +3,7 @@ import { VNode } from "../../core/VNode";
 import React from "../../core/react";
 import { Style } from "../../core/Style";
 
-@Style("card")
+//@style card
 export class Card extends BaseComponent<CardParam>{
     onRendered(): void {
     }    

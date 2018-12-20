@@ -3,7 +3,8 @@ import http from "http";
 import path from "path";
 import fs from "fs";
 import React from "./www/core/react";
-import {GetStyles} from "./traverse-scss";
+import {GetStyles, WatchScss} from "./traverse-scss";
+import WebSocket from "ws";
 
 
 let server=http.createServer((req,res)=>{
@@ -27,9 +28,11 @@ let server=http.createServer((req,res)=>{
 
         let head=tree.GetChild("head");
         let styles=tree.GetStyleEntries();
-        let css=GetStyles(styles);
+        let entries=GetStyles(styles);
         if(head){
-            head.AddChild(`<style>${css}</style>`)
+            entries.forEach(entry=>{
+                head.AddChild(`<style id="${entry.name}">${entry.css}</style>`);
+            });
         }
         let html=tree.ToHtml();
         
@@ -43,3 +46,11 @@ let server=http.createServer((req,res)=>{
     
 });
 server.listen(8001);
+
+let wsServer=new WebSocket.Server({port:8002});
+wsServer.on("connection",(ws)=>{
+    WatchScss(data=>{
+        ws.send(JSON.stringify(data));
+    });
+});
+

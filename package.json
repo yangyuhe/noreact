@@ -7,7 +7,7 @@
     "start": " node dist/start.js",
     "watch": "rm -rf ./dist && node watch.js &&  tsc --watch",
     "bundle": "webpack --config webpack.config.js",
-    "serve": "webpack-dev-server --config webpack.config.js --hot",
+    "serve": "webpack-dev-server --config webpack.config.js --hot --port 8003",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -15,6 +15,8 @@
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^10.12.11",
+    "@types/node-sass": "^3.10.32",
+    "@types/ws": "^6.0.1",
     "ts-loader": "^5.3.1",
     "typescript": "^3.2.2",
     "webpack": "^4.27.1",
@@ -24,6 +26,7 @@
   "dependencies": {
     "@types/jquery": "^3.3.24",
     "jquery": "^3.3.1",
-    "node-sass": "^4.11.0"
+    "node-sass": "^4.11.0",
+    "ws": "^6.1.2"
   }
 }

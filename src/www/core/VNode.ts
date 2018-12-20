@@ -107,8 +107,10 @@ export class VNode{
         this.children.forEach(child=>{
             if(child instanceof VNode){
                 let res=child.GetStyleEntries();
-                styles=styles.concat(res);
-                return;
+                res.forEach(style=>{
+                    if(styles.indexOf(style)==-1)
+                        styles.push(style);
+                });
             }
         });
         return styles;
