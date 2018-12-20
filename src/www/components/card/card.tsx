@@ -1,9 +1,8 @@
 import { BaseComponent } from "../../core/BaseComponent";
 import { VNode } from "../../core/VNode";
 import React from "../../core/react";
-import { Style } from "../../core/Style";
 
-//@style card
+/**@import "./card.scss" */
 export class Card extends BaseComponent<CardParam>{
     onRendered(): void {
     }    

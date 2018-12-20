@@ -13,10 +13,26 @@ module.exports = {
     module: {
         rules: [{
             test: /\.tsx?$/,
-            use: {
+            use: [{
                 loader: "ts-loader"
-            }
+            },{
+                loader:"stylename-loader"
+            }]
+        },{
+            test:/\.scss/,
+            use:[{
+                loader:"style-loader"
+            },
+            {
+                loader:"css-loader"
+            },
+            {
+                loader:"sass-loader"
+            }]
         }]
+    },
+    resolveLoader:{
+        modules:["node_modules",path.resolve(__dirname,"dist")]
     },
     output: {
         filename: "[name].js",

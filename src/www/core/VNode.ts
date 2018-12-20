@@ -1,6 +1,5 @@
 import { BaseComponent } from "./BaseComponent";
 import { NO_RENDERED_ATTRS, TRANSFER_ATTRS } from "./const";
-import { GetStyle } from "./Style";
 
 export class VNode{
     protected name:string="";
@@ -91,30 +90,7 @@ export class VNode{
         });
         return elem;
     }
-    /**
-     * 获取包含自己在内和所有子节点需要的样式表
-     */
-    GetStyleEntries():string[]{
-        let styles:string[]=[];
-
-        if(this.obj){
-            let specifiedStyle=GetStyle(this.obj);
-            if(specifiedStyle)
-                styles.push(specifiedStyle);
-        }
-        
-        
-        this.children.forEach(child=>{
-            if(child instanceof VNode){
-                let res=child.GetStyleEntries();
-                res.forEach(style=>{
-                    if(styles.indexOf(style)==-1)
-                        styles.push(style);
-                });
-            }
-        });
-        return styles;
-    }
+    
 
     SetObj(obj:BaseComponent<any>){
         this.obj=obj;
