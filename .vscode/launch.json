@@ -7,8 +7,14 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch Program",
+            "name": "debug typescript",
             "program": "${workspaceFolder}/dist/start.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "debug javascript",
+            "program": "${file}"
         }
     ]
 }

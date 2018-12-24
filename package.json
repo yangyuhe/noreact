@@ -4,26 +4,26 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": " node dist/start.js",
-    "dev":"npm run watch && npm run server",
-    "watch": "rm -rf ./dist &&  tsc --watch",
-    "bundle": "webpack --config webpack.config.js",
-    "serve": "webpack-dev-server --config webpack.config.js --hot --port 8003",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "noreact-start",
+    "webpack": "webpack-dev-server --host 0.0.0.0 --port 8003 --hot",
+    "bundle": "webpack --config webpack.config.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^10.12.11",
+    "clean-webpack-plugin": "^1.0.0",
     "css-loader": "^2.0.1",
+    "node-sass": "^4.11.0",
     "sass-loader": "^7.1.0",
     "style-loader": "^0.23.1",
-    "ts-loader": "^5.3.1",
+    "ts-loader": "^5.3.2",
     "typescript": "^3.2.2",
     "webpack": "^4.27.1",
     "webpack-cli": "^3.1.2",
-    "webpack-dev-server": "^3.1.10"
+    "webpack-dev-server": "^3.1.10",
+    "webpack-manifest-plugin": "^2.0.4"
   },
   "dependencies": {
     "@types/jquery": "^3.3.24",

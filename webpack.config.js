@@ -1,9 +1,19 @@
-const path = require("path")
+const path = require("path");
+const ManifestPlugin = require('webpack-manifest-plugin');
+const CleanWebpackPlugin = require('clean-webpack-plugin');
+const webpack=require("webpack");
+
+let shouldClearDir=process.argv.indexOf("--hot")==-1;
+let plugins=[
+    new ManifestPlugin()  
+];
+if(shouldClearDir)
+    plugins.push(new CleanWebpackPlugin(['bundle']));
 
 module.exports = {
     mode:"development",
     entry: {
-        "homepage": path.resolve(__dirname,"src/www"+"/main.ts")
+        "bootstrap": path.resolve(__dirname,"src/www/pages"+"/bootstrap.ts")
     },
     devtool: 'source-map',
     resolve: {
@@ -14,7 +24,11 @@ module.exports = {
         rules: [{
             test: /\.tsx?$/,
             use: [{
-                loader: "ts-loader"
+                loader: "ts-loader",
+                options:{compilerOptions:{
+                    "module": "esnext",
+                    "target": "ES5"
+                }}
             },{
                 loader:"stylename-loader"
             }]
@@ -36,12 +50,14 @@ module.exports = {
     },
     output: {
         filename: "[name].js",
-        path: path.resolve(__dirname,"bundle")
+        path: path.resolve(__dirname,"bundle"),
+        chunkFilename: '[name].bundle.js',
     },
-    plugins: [
-    ],
+    plugins: plugins,
     devServer: {
         historyApiFallback: true,
-        hot:true
-    }
+        hot:true,
+        stats:"normal"
+    },
+    stats:"normal"
 }

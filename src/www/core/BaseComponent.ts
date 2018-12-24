@@ -32,6 +32,14 @@ export abstract class BaseComponent<T>{
             this.root=this.Render();
         return this.root;
     }
+    ToHtml(){
+        let vnode=this.GetVNode();
+        return vnode.ToHtml();
+    }
+    ToDom(){
+        let vnode=this.GetVNode();
+        return vnode.ToDom();
+    }
     AttachElement(elem:HTMLElement){
         this.elem=elem;
         this.$elem=$(elem);

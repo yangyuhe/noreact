@@ -5,6 +5,7 @@ import React from "../../core/react";
 /**@import "./card.scss" */
 export class Card extends BaseComponent<CardParam>{
     onRendered(): void {
+        let a=4;
     }    
     doThing(){
         return (
