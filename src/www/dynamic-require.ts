@@ -7,8 +7,8 @@ export function GetJSModule(module:string){
                 return module.AboutPage;
             });
         }
-        if(module=="md-fact"){
-            promise=import(/*webpackChunkName:"md-fact" */"./components/fact/fact").then(module=>{
+        if(module=="fact"){
+            promise=import(/*webpackChunkName:"fact" */"./components/fact/fact").then(module=>{
                 return module.MdFact;
             });
         }
