@@ -2,10 +2,13 @@ const path = require("path");
 const ManifestPlugin = require('webpack-manifest-plugin');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 const webpack=require("webpack");
+const config=require("./src/app.json");
 
-let shouldClearDir=process.argv.indexOf("--hot")==-1;
+let shouldClearDir=process.argv[1].indexOf("webpack-dev-server")==-1;
 let plugins=[
-    new ManifestPlugin()  
+    new ManifestPlugin(),
+    new webpack.NamedModulesPlugin(),
+    new webpack.HotModuleReplacementPlugin() 
 ];
 if(shouldClearDir)
     plugins.push(new CleanWebpackPlugin(['bundle']));
@@ -13,7 +16,7 @@ if(shouldClearDir)
 module.exports = {
     mode:"development",
     entry: {
-        "bootstrap": path.resolve(__dirname,"src/www/pages"+"/bootstrap.ts")
+        "bootstrap": path.resolve(__dirname,"src/www/"+"bootstrap.ts")
     },
     devtool: 'source-map',
     resolve: {
@@ -46,7 +49,7 @@ module.exports = {
         }]
     },
     resolveLoader:{
-        modules:["node_modules",path.resolve(__dirname,"dist")]
+        modules:["node_modules",path.resolve(__dirname,"dist/www/loaders")]
     },
     output: {
         filename: "[name].js",
@@ -57,7 +60,9 @@ module.exports = {
     devServer: {
         historyApiFallback: true,
         hot:true,
-        stats:"normal"
+        stats: { colors: true },
+        host:config.webpack_host,
+        port:config.webpack_port
     },
     stats:"normal"
 }

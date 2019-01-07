@@ -1,0 +1,11 @@
+$item-margin:20px;
+.fact-list{
+    margin: 10px 200px;
+    .fact-item{
+        float: left;
+        width: calc((100% - #{$item-margin * 2})/3);
+        &:nth-of-type(3n+2){
+            margin:0px 20px;
+        }
+    }
+}

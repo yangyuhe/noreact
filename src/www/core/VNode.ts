@@ -1,12 +1,12 @@
 import { BaseComponent } from "./BaseComponent";
 import { NO_RENDERED_ATTRS, TRANSFER_ATTRS } from "./const";
 
-export class VNode{
+export class JSX{
     protected name:string="";
     
-    protected children:(VNode|string)[]=[];
+    protected children:(JSX|string)[]=[];
     private attrs:{name:string,value:any}[]=[];
-    private parent:VNode=null;
+    private parent:JSX=null;
 
     private obj:BaseComponent<any>;
     
@@ -14,7 +14,7 @@ export class VNode{
         this.name=name;
     }
     
-    AddChild(child:VNode|string){
+    AddChild(child:JSX|string){
         this.children.push(child);
     }
     GetChildren(){
@@ -53,7 +53,7 @@ export class VNode{
         });
         innerhtmls.push(">");
         this.children.forEach(child=>{
-            if(child instanceof VNode){
+            if(child instanceof JSX){
                 let res=child.ToHtml();
                 innerhtmls.push(res);
                 return;
@@ -77,7 +77,7 @@ export class VNode{
             }
         });
         this.children.forEach(child=>{
-            if(child instanceof VNode){
+            if(child instanceof JSX){
                 let dom=child.ToDom();
                 elem.appendChild(dom);
                 return;
@@ -111,7 +111,7 @@ export class VNode{
     }
     BroadCast(event:string,...data:any[]){
         this.children.forEach(child=>{
-            if(child instanceof VNode){
+            if(child instanceof JSX){
                 let obj=child.GetObj();
                 if(obj){
                     obj.Trigger(event,...data);
@@ -121,13 +121,13 @@ export class VNode{
         });
     }
 
-    SetParent(parent:VNode){
+    SetParent(parent:JSX){
         this.parent=parent;
     }
-    GetChild(name:string):VNode{
+    GetChild(name:string):JSX{
         for(let i=0;i<this.children.length;i++){
             let child=this.children[i];
-            if(child instanceof VNode){
+            if(child instanceof JSX){
                 if(child.name==name)
                     return child;
                 else{
