@@ -1,5 +1,5 @@
 import { BaseComponent } from "./BaseComponent";
-import { NO_RENDERED_ATTRS, TRANSFER_ATTRS } from "./const";
+import { CONTEXT_ATTRS, VARIABLE_ATTRS } from "./const";
 
 export class VNode{
     protected name:string="";
@@ -43,8 +43,8 @@ export class VNode{
         innerhtmls.push(`<${this.name} `);
         
         this.attrs.forEach(attr=>{
-            if(NO_RENDERED_ATTRS[attr.name]==null){
-                let transferdName=TRANSFER_ATTRS[attr.name];
+            if(CONTEXT_ATTRS[attr.name]==null){
+                let transferdName=VARIABLE_ATTRS[attr.name];
                 if(transferdName)
                     innerhtmls.push(`${transferdName}="${attr.value}" `);
                 else
@@ -70,11 +70,16 @@ export class VNode{
         let elem=document.createElement(this.name);
         
         this.attrs.forEach(attr=>{
-            if(attr.name=="onClick"){
-                elem.addEventListener("click",attr.value);
-            }else{
-                elem.setAttribute(attr.name,attr.value);
+            if(CONTEXT_ATTRS[attr.name]!=null){
+                CONTEXT_ATTRS[attr.name](elem,attr.value);
+                return;
             }
+            if(VARIABLE_ATTRS[attr.name]!=null){
+                let transferdName=VARIABLE_ATTRS[attr.name];
+                elem.setAttribute(transferdName,attr.value);
+                return;
+            }
+            elem.setAttribute(attr.name,attr.value);
         });
         this.children.forEach(child=>{
             if(child instanceof VNode){

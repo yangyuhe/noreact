@@ -1,5 +1,5 @@
 import { BaseComponent } from "./core/BaseComponent";
-import { NO_RENDERED_ATTRS, VNODE_ID } from "./core/const";
+import { CONTEXT_ATTRS, VNODE_ID } from "./core/const";
 import { VNode } from "./core/VNode";
 import { GetJSModule } from "./dynamic-require";
 
@@ -36,10 +36,10 @@ function RestoreVNode(vnode:VNode,elem:HTMLElement){
             vnode.GetObj().AttachElement(dom);
             vnode.GetObj().onRendered();
         }
-        for(let attrname in NO_RENDERED_ATTRS){
+        for(let attrname in CONTEXT_ATTRS){
             let value=vnode.GetAttr(attrname);
             if(value)
-                NO_RENDERED_ATTRS[attrname](dom,value);
+                CONTEXT_ATTRS[attrname](dom,value);
         }
         vnode.GetChildren().forEach(child=>{
             if(child instanceof VNode)

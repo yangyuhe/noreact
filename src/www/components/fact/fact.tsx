@@ -16,7 +16,13 @@ export class MdFact extends BaseComponent<{ title: string, lists: FactItemParams
         this.notify("modify",[{
             name:"title",
             type:"input"
-        }]);
+        }],(data:{name:string,value:string}[])=>{
+            data.forEach(item=>{
+                if(item.name=="title"){
+                    this.$elem.find(".fact-title").text(item.value);
+                }
+            });
+        });
     }
     protected Render(): VNode {
         return (

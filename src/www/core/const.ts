@@ -1,9 +1,9 @@
-export const NO_RENDERED_ATTRS:{[name:string]:(elem:HTMLElement,value:any)=>void}={
+export const CONTEXT_ATTRS:{[name:string]:(elem:HTMLElement,value:any)=>void}={
     "onClick":(elem,value)=>{
         elem.addEventListener("click",value);
     }
 };
-export const TRANSFER_ATTRS:{[name:string]:string}={
+export const VARIABLE_ATTRS:{[name:string]:string}={
     "className":"class"
 };
 

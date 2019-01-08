@@ -5,7 +5,14 @@
     left: 0px;
     right: 0px;
     bottom: 0px;
-    .edit{
-        
+    .field-item{
+        margin: 10px;
+        display: flex;
+        align-items: center;
+        .field-title{
+        }
+        .field-input{
+
+        }
     }
 }
