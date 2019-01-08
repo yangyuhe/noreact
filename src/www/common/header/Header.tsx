@@ -18,12 +18,6 @@ export class Header extends BaseComponent<Menu[]>{
     }
     bg(){
         let bg=localStorage.getItem("header-bg");
-        if(bg){
-            
-        }
-        this.on("header-bg",(data:string)=>{
-            this.$elem.css({border:data});
-        });
     }
     protected Render(): VNode {
         return <div className="header">

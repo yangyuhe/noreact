@@ -105,7 +105,7 @@ export class VNode{
     Emit(event:string,...data:any[]){
         if(this.parent){
             if(this.parent.HasObjAttached())
-                this.parent.GetObj().Trigger(event,...data);
+                this.parent.GetObj().__Trigger(event,...data);
             this.parent.Emit(event,...data);
         }
     }
@@ -114,7 +114,7 @@ export class VNode{
             if(child instanceof VNode){
                 let obj=child.GetObj();
                 if(obj){
-                    obj.Trigger(event,...data);
+                    obj.__Trigger(event,...data);
                 }
                 child.BroadCast(event,...data);
             }

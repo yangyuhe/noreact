@@ -7,9 +7,10 @@ import { FactItem, FactItemParams } from "./fact-item";
 /**@import "./fact.scss" */
 @Component("fact")
 export class MdFact extends BaseComponent<FactItemParams[]>{
-    
     onRendered(): void {
-        console.log("hello")
+        this.on("bug",(target,...args:any[])=>{
+            console.log("fuck",target,args);
+        });
     }    
     protected Render(): VNode {
         return (<div className="fact-list">
