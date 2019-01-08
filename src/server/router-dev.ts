@@ -25,7 +25,7 @@ devLinked.Get("/custom",(req,res)=>{
         try{
             let json=getJSON(module,dir);
             if(!json || !json.name){
-                throw new Error("模块数据文件["+modules+"]格式错误");
+                throw new Error(`未找到数据文件${module}.json`);
             }
             if(json.data==null)
                 json.data={};
