@@ -4,7 +4,7 @@ import { VNode } from "../../core/VNode";
 
 /**@import "./ratio-image.scss" */
 
-export class RatioImage extends BaseComponent<{ratio:number,picUrl:string}>{
+export class RatioImage extends BaseComponent<RatioImageParam>{
     
     onRendered(): void {
         let img=document.createElement("img");
@@ -24,7 +24,12 @@ export class RatioImage extends BaseComponent<{ratio:number,picUrl:string}>{
     }    
     protected Render(): VNode {
         return <div className="ratio-image">
-            <div className="ratio-image-inner" style={"padding-top:"+this.params.ratio*100+"%"}></div>
+            <div className="ratio-image-inner" style={"padding-top:"+this.params.ratio*100+"%;" + (this.params.border ? ("border:" + this.params.border) : "")}></div>
         </div>;
     }
+}
+export interface RatioImageParam{
+    ratio:number,
+    picUrl:string,
+    border?:string
 }
