@@ -14,7 +14,7 @@ export class TeamModule extends BaseComponent<TeamModuleParams>{
     protected Render(): VNode {
         
         return (
-            <div>
+            <div class="md-team">
                 <Title title="operate team"></Title>
                 <div className="md-grid team-list">
                     <ul class="grid-list clearfix">
