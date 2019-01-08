@@ -16,6 +16,7 @@ linked.Use(devLinked);
 
 
 let server=http.createServer((req,res)=>{
+    console.log(123)
     linked.Startup(req,res);
 });
 
