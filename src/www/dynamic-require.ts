@@ -27,6 +27,11 @@ export function GetJSModule(module:string){
                 return module.Card;
             });
         }
+        if(module=="edit"){
+            promise=import(/*webpackChunkName:"edit" */"./components/edit/edit").then(module=>{
+                return module.Edit;
+            });
+        }
         if(!promise)
             throw new Error("no specified module found:"+module);
         return promise;
