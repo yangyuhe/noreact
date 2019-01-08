@@ -40,10 +40,12 @@ export abstract class BaseComponent<T>{
         }
         return vnode.ToHtml();
     }
+    // 
     ToDom(){
         let vnode=this.GetVNode();
         return vnode.ToDom();
     }
+    // 赋值elems
     AttachElement(elem:HTMLElement){
         this.elem=elem;
         this.$elem=$(elem);

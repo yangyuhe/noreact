@@ -17,6 +17,11 @@ export function GetJSModule(module:string){
                 return module.Header;
             });
         }
+        if(module=="card"){
+            promise=import(/*webpackChunkName:"card" */"./components/card/card").then(module=>{
+                return module.Card;
+            });
+        }
         if(!promise)
             throw new Error("no specified module found:"+module);
         return promise;
