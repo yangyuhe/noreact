@@ -12,6 +12,11 @@ export function GetJSModule(module:string){
                 return module.MdFact;
             });
         }
+        if(module=="team"){
+            promise=import(/*webpackChunkName:"team" */"./components/team/team").then(module=>{
+                return module.TeamModule;
+            });
+        }
         if(!promise)
             throw new Error("no specified module found:"+module);
         return promise;
