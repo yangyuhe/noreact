@@ -5,7 +5,9 @@ import React from "../../core/react";
 
 export class MoreMenu extends BaseComponent<{}>{
     onRendered(): void {
-        
+        window.addEventListener("resize",()=>{
+            console.log("bb")
+        });
     }    
     protected Render(): VNode {
         return <div className="more-menu">

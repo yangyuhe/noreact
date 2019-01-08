@@ -1,6 +1,7 @@
 import "../www";
 import { ComponentFactory } from "../www/core/component-manager";
 import { Linked } from "./core/linked";
+import { Save } from "./router-save";
 
 export let proLinked=new Linked();
 proLinked.Post("/custom",(req,res)=>{
@@ -55,3 +56,4 @@ proLinked.Post("/custom",(req,res)=>{
         }
     });
 });
+proLinked.Post("/save",Save);
