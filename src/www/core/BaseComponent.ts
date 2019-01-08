@@ -1,5 +1,6 @@
 import { VNode } from "./VNode";
 import $ from "jquery";
+import { RegisterEvent, TriggerEvent } from "./event-center";
 export abstract class BaseComponent<T>{
     private root:VNode;
     protected $elem:JQuery;
@@ -21,8 +22,12 @@ export abstract class BaseComponent<T>{
         if(!this.eventRegister[event])
             this.eventRegister[event]=[];
         this.eventRegister[event].push(callback);
+        RegisterEvent(event,callback);
     }
-    Trigger(event,...data:any[]){
+    protected notify(event,...data:any[]){
+        TriggerEvent(event,...data);
+    }
+    __Trigger(event,...data:any[]){
         let cbs=this.eventRegister[event];
         if(cbs){
             cbs.forEach(cb=>cb(...data));

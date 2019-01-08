@@ -12,6 +12,7 @@ export class Edit extends BaseComponent<{btn:string}>{
         axios.post("/save",{name:"edit",data:{btn:"修改"}}).then(res=>{
             console.log(res);
         });
+        this.notify("bug",1,2,3);
     }
     protected Render(): VNode {
         return <div>
