@@ -27,6 +27,11 @@ export function GetJSModule(module:string){
                 return module.Card;
             });
         }
+        if(module=="search"){
+            promise=import(/*webpackChunkName:"search" */"./components/search/search").then(module=>{
+                return module.SearchModule;
+            });
+        }
         if(!promise)
             throw new Error("no specified module found:"+module);
         return promise;

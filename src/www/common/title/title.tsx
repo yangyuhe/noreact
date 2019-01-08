@@ -12,7 +12,7 @@ export class Title extends BaseComponent<TitleParams>{
     protected Render(): VNode {
         const { title } = this.params;
         return (
-            <p class="mg-title">{title || '这是一个标题'}</p>
+            <p class="mg-title">{title || 'hello world'}</p>
         )
     }
 }

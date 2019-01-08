@@ -10,7 +10,6 @@ import { Title } from '../../common/title/title';
 export class TeamModule extends BaseComponent<TeamModuleParams>{
     
     onRendered(): void {
-        console.log("team module")
     }    
     protected Render(): VNode {
         

@@ -1,0 +1,55 @@
+.md-quick-search {
+    .list {
+        overflow: hidden;
+        .quick-list {
+            width: calc(100% + 20px);
+            margin-right: -20px;
+            margin-top: -20px;
+            overflow: hidden;
+            li {
+                width: calc((100% - 100px) / 3);
+                float: left;
+                position: relative;
+                box-sizing: content-box;
+                padding: 20px 19px 0;
+                height: 15px;
+                .search-title {
+                    font-size: 14px;
+                    text-align: left;
+                    display: inline-block;
+                    max-width: calc(100% - 65px);
+                    &.hot {
+                        max-width: calc(100% - 100px);
+                    }
+                }
+                .hot-house {
+                    padding-left: 8px;
+                    font-size: 12px;
+                    text-align: right;
+                    color: #ff900a;
+                    position: relative;
+                    top: -2px;
+                }
+                .num {
+                    position: absolute;
+                    right: 19px;
+                }
+                &:nth-child(3n + 1) {
+                    padding-left: 0;
+                }
+                &:after {
+                    content: "";
+                    position: absolute;
+                    top: 20px;
+                    height: 50px;
+                    width: 1px;
+                    right: 1px;
+                    background-color: #f6f6f9;
+                }
+            }
+        }
+        .quicksearch-more {
+            display: none;
+        }
+    }
+}
