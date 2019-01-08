@@ -1,18 +1,54 @@
 .edit{
-    display: none;
     position: fixed;
-    height: 100px;
-    left: 0px;
-    right: 0px;
+    max-height: 400px;
+    left: 10px;
+    right: 10px;
     bottom: 0px;
-    .field-item{
-        margin: 10px;
-        display: flex;
-        align-items: center;
-        .field-title{
+    overflow: auto;
+    background: #4C84FF;
+    border-radius: 8px;
+    border:2px solid white;
+    color: white;
+    padding: 10px;
+    transform: translateY(100%);
+    transition: transform ease-in-out 400ms;
+    
+    .edit-list{
+        .field-item{
+            margin: 10px;
+            display: flex;
+            align-items: center;
+            width: calc((100% - 40px)/2);
+            float: left;
+            .field-title{
+                margin-right: 10px;
+            }
+            .field-input{
+                outline: none;
+                border: 1px solid white;
+                height: 20px;
+                line-height: 20px;
+                &:focus{
+                    border-color: green;
+                }
+            }
         }
-        .field-input{
-
+        &:after{
+            content: "";
+            display: block;
+            clear: both;
+        }
+        
+    }
+    .oper{
+        display: flex;
+        .save-btn,.cancel-btn{
+            height: 40px;
+            width: 100px;
+            display: block;
+            margin: auto;
         }
     }
+    
+    
 }

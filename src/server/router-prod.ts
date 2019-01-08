@@ -22,7 +22,7 @@ proLinked.Post("/custom",(req,res)=>{
                 <meta http-equiv="X-UA-Compatible" content="ie=edge">
                 <title>Document</title>
             </head>
-            <body>
+            <body style="display:none">
             `;
             let suffix=[];
             for(let i=0;i<modules.length;i++){

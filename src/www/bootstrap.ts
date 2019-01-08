@@ -6,15 +6,24 @@ import { GetJSModule } from "./dynamic-require";
 /**@import "./assets/css/common.scss" */
 declare let $noreact_roots:{name:string,data:any}[];
 if($noreact_roots){
+    let promises:Promise<any>[]=[];
     $noreact_roots.forEach(root=>{
         let promise=GetJSModule(root.name);
-        if(promise)
+        if(promise){
             promise.then(module=>{
                 let component:BaseComponent<any>=new module(root.data);
                 let tree=component.GetVNode();
                 tree.SetObj(component);
                 RestoreVNode(tree,null);
             });
+            promises.push(promise);
+        }
+    });
+    Promise.all(promises).then(()=>{
+        document.body.style.display="block";
+    },err=>{
+        console.error(err);
+        document.body.style.display="block";
     });
 }
 

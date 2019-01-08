@@ -11,22 +11,26 @@ export class Edit extends BaseComponent<{btn:string}>{
     callback:Function=null;
     onRendered(): void {
         this.on("modify",(target,data:{name:string,type:string}[],callback:Function)=>{
-            console.log(data);
+            this.clear();
             this.callback=callback;
-            this.$elem.css({display:"block"});
+            this.$elem.css({transform:"none",display:"block"});
             let input:VNode[]=data.map(item=>{
                 return (
                 <div className="field-item">
-                    <h4 className="field-title">{item.name}</h4>
+                    <div className="field-title">{item.name}</div>
                     <input className="field-input" type={item.type} name={item.name}/>
                 </div>);
             });
             input.forEach(item=>{
                 let $dom=$(item.ToDom());
-                $dom.insertBefore(this.$elem.find("button"));
+                this.$elem.find(".edit-list").append($dom);
             });
         });
     }    
+    clear(){
+        this.$elem.find('.edit-list').empty();
+        this.callback=null;
+    }
     onSave(){
        let data:{name:string,value:string}[]=[];
        let fields=this.$elem.find(".field-item");
@@ -37,9 +41,16 @@ export class Edit extends BaseComponent<{btn:string}>{
        }
        this.callback(data);
     }
+    onCancel(){
+        this.$elem.css({transform:"translateY(100%)"});
+    }
     protected Render(): VNode {
         return <div class="edit">
-            <button onClick={this.onSave.bind(this)}>{this.params.btn}</button>
+            <div className="edit-list"></div>
+            <div className="oper">
+                <button className="save-btn" onClick={this.onSave.bind(this)}>保存</button>
+                <button className="cancel-btn" onClick={this.onCancel.bind(this)}>取消</button>
+            </div>
         </div>
     }
 }

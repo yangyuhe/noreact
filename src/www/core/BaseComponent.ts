@@ -24,7 +24,7 @@ export abstract class BaseComponent<T>{
         this.eventRegister[event].push(callback);
         RegisterEvent(event,callback);
     }
-    protected notify(event,...data:any[]){
+    protected notify(event:string,...data:any[]){
         TriggerEvent(event,this,...data);
     }
     __Trigger(event,...data:any[]){
