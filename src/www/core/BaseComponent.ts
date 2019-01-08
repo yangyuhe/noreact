@@ -1,7 +1,7 @@
-import { JSX } from "./VNode";
+import { VNode } from "./VNode";
 import $ from "jquery";
 export abstract class BaseComponent<T>{
-    private root:JSX;
+    private root:VNode;
     protected $elem:JQuery;
     protected elem:HTMLElement;
     private eventRegister:{[event:string]:Function[]}={};
@@ -9,7 +9,7 @@ export abstract class BaseComponent<T>{
     constructor(protected params:T){
     }
     abstract onRendered():void;
-    protected abstract Render():JSX;
+    protected abstract Render():VNode;
     
     protected emit(event:string,...data:any[]){
         this.root.Emit(event,...data);
@@ -28,7 +28,7 @@ export abstract class BaseComponent<T>{
             cbs.forEach(cb=>cb(...data));
         }
     }
-    GetVNode():JSX{
+    GetVNode():VNode{
         if(!this.root)
             this.root=this.Render();
         return this.root;

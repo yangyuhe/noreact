@@ -1,6 +1,6 @@
 import { BaseComponent } from "./core/BaseComponent";
 import { NO_RENDERED_ATTRS, VNODE_ID } from "./core/const";
-import { JSX } from "./core/VNode";
+import { VNode } from "./core/VNode";
 import { GetJSModule } from "./dynamic-require";
 
 declare let $noreact_roots:{name:string,data:any}[];
@@ -24,7 +24,7 @@ ws.onmessage=msg=>{
     }
 };
 
-function RestoreVNode(vnode:JSX){
+function RestoreVNode(vnode:VNode){
     let nodeId=vnode.GetAttr(VNODE_ID);
     let selector=`[${VNODE_ID}='${nodeId}']`;
     let dom=document.querySelector(selector) as HTMLElement;
@@ -40,7 +40,7 @@ function RestoreVNode(vnode:JSX){
         }
     }
     vnode.GetChildren().forEach(child=>{
-        if(child instanceof JSX)
+        if(child instanceof VNode)
             RestoreVNode(child);
     });
 }

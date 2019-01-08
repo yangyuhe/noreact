@@ -1,6 +1,6 @@
 import { BaseComponent } from "../../core/BaseComponent";
 import React from "../../core/react";
-import { JSX } from "../../core/VNode";
+import { VNode } from "../../core/VNode";
 
 /**@import "./ratio-image.scss" */
 
@@ -22,7 +22,7 @@ export class RatioImage extends BaseComponent<{ratio:number,picUrl:string}>{
         };
         this.$elem.find(".ratio-image-inner").append(img);
     }    
-    protected Render(): JSX {
+    protected Render(): VNode {
         return <div className="ratio-image">
             <div className="ratio-image-inner" style={"padding-top:"+this.params.ratio*100+"%"}></div>
         </div>;

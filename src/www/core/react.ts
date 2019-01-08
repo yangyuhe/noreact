@@ -1,4 +1,4 @@
-import { JSX } from "./VNode";
+import { VNode as VNode } from "./VNode";
 import { ComponentConstructor } from "./BaseComponent";
 import { VNODE_ID } from "./const";
 
@@ -7,11 +7,11 @@ class React{
     ResetCounter(){
         this.counter=0;
     }
-    createElement(Elem:string|ComponentConstructor<any>,attrs:{[key:string]:any},...children:(JSX|JSX[]|string)[]) :JSX{
+    createElement(Elem:string|ComponentConstructor<any>,attrs:{[key:string]:any},...children:(VNode|VNode[]|string)[]) :VNode{
         
-        let vnode:JSX;
+        let vnode:VNode;
         if(typeof Elem=="string"){
-            vnode=new JSX(Elem);
+            vnode=new VNode(Elem);
             vnode.AddAttr(VNODE_ID,this.counter);
             this.counter++;
             if(attrs!=null){
@@ -39,7 +39,7 @@ class React{
                 return;
             }
             
-            if(child instanceof JSX){
+            if(child instanceof VNode){
                 vnode.AddChild(child);
                 child.SetParent(vnode);
                 return;

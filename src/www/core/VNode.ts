@@ -1,12 +1,12 @@
 import { BaseComponent } from "./BaseComponent";
 import { NO_RENDERED_ATTRS, TRANSFER_ATTRS } from "./const";
 
-export class JSX{
+export class VNode{
     protected name:string="";
     
-    protected children:(JSX|string)[]=[];
+    protected children:(VNode|string)[]=[];
     private attrs:{name:string,value:any}[]=[];
-    private parent:JSX=null;
+    private parent:VNode=null;
 
     private obj:BaseComponent<any>;
     
@@ -14,7 +14,7 @@ export class JSX{
         this.name=name;
     }
     
-    AddChild(child:JSX|string){
+    AddChild(child:VNode|string){
         this.children.push(child);
     }
     GetChildren(){
@@ -53,7 +53,7 @@ export class JSX{
         });
         innerhtmls.push(">");
         this.children.forEach(child=>{
-            if(child instanceof JSX){
+            if(child instanceof VNode){
                 let res=child.ToHtml();
                 innerhtmls.push(res);
                 return;
@@ -77,7 +77,7 @@ export class JSX{
             }
         });
         this.children.forEach(child=>{
-            if(child instanceof JSX){
+            if(child instanceof VNode){
                 let dom=child.ToDom();
                 elem.appendChild(dom);
                 return;
@@ -111,7 +111,7 @@ export class JSX{
     }
     BroadCast(event:string,...data:any[]){
         this.children.forEach(child=>{
-            if(child instanceof JSX){
+            if(child instanceof VNode){
                 let obj=child.GetObj();
                 if(obj){
                     obj.Trigger(event,...data);
@@ -121,13 +121,13 @@ export class JSX{
         });
     }
 
-    SetParent(parent:JSX){
+    SetParent(parent:VNode){
         this.parent=parent;
     }
-    GetChild(name:string):JSX{
+    GetChild(name:string):VNode{
         for(let i=0;i<this.children.length;i++){
             let child=this.children[i];
-            if(child instanceof JSX){
+            if(child instanceof VNode){
                 if(child.name==name)
                     return child;
                 else{
