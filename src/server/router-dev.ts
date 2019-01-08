@@ -39,7 +39,7 @@ devLinked.Get("/custom",(req,res)=>{
         }
     }
     let url=`http://${config.node_host}:${config.node_port}/custom`;
-    let client=http.request(url,{method:"POST"},im=>{
+    let client=http.request({host:config.node_host,port:config.node_port,path:"/custom",method:"POST"},im=>{
         let rawheaders=im.rawHeaders;
         let headers:{[name:string]:string|string[]}={};
         for(let i=0;i<rawheaders.length;i+=2){
@@ -66,7 +66,11 @@ devLinked.Get("/custom",(req,res)=>{
 });
 devLinked.OtherWise=(req,res)=>{
     let url=`http://${config.webpack_host}:${config.webpack_port}`+req.url;
-    let client=http.request(url,im=>{
+    let client=http.request({
+        host:config.webpack_host,
+        port:config.webpack_port,
+        path:req.url
+    },im=>{
         im.pipe(res);
     });
     client.on("error",err=>{
