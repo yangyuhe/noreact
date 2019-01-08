@@ -12,6 +12,11 @@ export function GetJSModule(module:string){
                 return module.MdFact;
             });
         }
+        if(module=="header"){
+            promise=import(/*webpackChunkName:"header" */"./common/header/Header").then(module=>{
+                return module.Header;
+            });
+        }
         if(!promise)
             throw new Error("no specified module found:"+module);
         return promise;

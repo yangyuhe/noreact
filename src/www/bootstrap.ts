@@ -3,6 +3,7 @@ import { NO_RENDERED_ATTRS, VNODE_ID } from "./core/const";
 import { VNode } from "./core/VNode";
 import { GetJSModule } from "./dynamic-require";
 
+/**@import "./assets/css/common.scss" */
 declare let $noreact_roots:{name:string,data:any}[];
 if($noreact_roots){
     $noreact_roots.forEach(root=>{
