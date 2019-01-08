@@ -46,6 +46,11 @@ module.exports = {
             {
                 loader:"sass-loader"
             }]
+        },{
+            test:/\.((ttf)|(woff2)|(woff)|(eot)|(svg))$/,
+            use:[{
+                loader:"url-loader"
+            }]
         }]
     },
     resolveLoader:{

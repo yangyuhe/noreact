@@ -15,6 +15,9 @@ export function GetJSModule(module:string){
         if(module=="team"){
             promise=import(/*webpackChunkName:"team" */"./components/team/team").then(module=>{
                 return module.TeamModule;
+        if(module=="header"){
+            promise=import(/*webpackChunkName:"header" */"./common/header/Header").then(module=>{
+                return module.Header;
             });
         }
         if(!promise)
