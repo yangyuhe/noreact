@@ -19,12 +19,6 @@ if($noreact_roots){
             promises.push(promise);
         }
     });
-    Promise.all(promises).then(()=>{
-        document.body.style.display="block";
-    },err=>{
-        console.error(err);
-        document.body.style.display="block";
-    });
 }
 
 // let ws=new WebSocket("ws://localhost:8002/noreact-tool");

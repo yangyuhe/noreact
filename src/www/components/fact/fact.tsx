@@ -2,6 +2,7 @@ import { BaseComponent } from "../../core/BaseComponent";
 import { VNode } from "../../core/VNode";
 import { Component } from "../../core/component-manager";
 import React from "../../core/react";
+import axios from "axios";
 import { FactItem, FactItemParams } from "./fact-item";
 
 /**@import "./fact.scss" */
@@ -10,6 +11,16 @@ export class MdFact extends BaseComponent<{ title: string, lists: FactItemParams
     onRendered(): void {
         this.on("bug", (target, ...args: any[]) => {
             console.log("fuck", target, args);
+        });
+        this.on("save",()=>{
+            axios.post("/save",{
+                name:this._name,
+                data:this.params
+            }).then(()=>{
+                alert("成功");
+            },err=>{
+                alert("失败");
+            });
         });
     }
     modify(){
@@ -24,6 +35,7 @@ export class MdFact extends BaseComponent<{ title: string, lists: FactItemParams
                 }
             });
         });
+        
     }
     protected Render(): VNode {
         return (
