@@ -15,6 +15,7 @@
     "@types/node": "^10.12.11",
     "clean-webpack-plugin": "^1.0.0",
     "css-loader": "^2.0.1",
+    "file-loader": "^3.0.1",
     "node-sass": "^4.11.0",
     "noreact-tool": "^1.0.0",
     "sass-loader": "^7.1.0",

@@ -49,7 +49,11 @@ module.exports = {
         },{
             test:/\.((ttf)|(woff2)|(woff)|(eot)|(svg))$/,
             use:[{
-                loader:"url-loader"
+                loader:"url-loader",
+                options:{
+                    limit: 8192,
+                    name: '[name].[ext]'
+                }
             }]
         }]
     },

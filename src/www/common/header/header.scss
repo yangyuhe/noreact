@@ -40,7 +40,9 @@ $menuHeight:75px;
         top: 0;
         height: $menuHeight;
         width: $menuHeight;
-        background: red;
         font-family: "icons-font";
+        font-size: 20px;
+        text-align: center;
+        line-height: $menuHeight;
     }
 }
