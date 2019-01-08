@@ -8,8 +8,8 @@ import { FactItem, FactItemParams } from "./fact-item";
 @Component("fact")
 export class MdFact extends BaseComponent<FactItemParams[]>{
     onRendered(): void {
-        this.on("bug",(...args:any[])=>{
-            console.log("fuck",args);
+        this.on("bug",(target,...args:any[])=>{
+            console.log("fuck",target,args);
         });
     }    
     protected Render(): VNode {

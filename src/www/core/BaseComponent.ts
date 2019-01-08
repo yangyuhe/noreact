@@ -13,19 +13,19 @@ export abstract class BaseComponent<T>{
     protected abstract Render():VNode;
     
     protected emit(event:string,...data:any[]){
-        this.root.Emit(event,...data);
+        this.root.Emit(event,this,...data);
     }
     protected broadcast(event:string,...data:any[]){
-        this.root.BroadCast(event,...data);
+        this.root.BroadCast(event,this,...data);
     }
-    protected on(event:string,callback:Function){
+    protected on(event:string,callback:(target:BaseComponent<any>,...data:any[])=>void){
         if(!this.eventRegister[event])
             this.eventRegister[event]=[];
         this.eventRegister[event].push(callback);
         RegisterEvent(event,callback);
     }
     protected notify(event,...data:any[]){
-        TriggerEvent(event,...data);
+        TriggerEvent(event,this,...data);
     }
     __Trigger(event,...data:any[]){
         let cbs=this.eventRegister[event];
