@@ -10,7 +10,7 @@ import $ from "jquery";
 export class Edit extends BaseComponent<{btn:string}>{
     callback:Function=null;
     onRendered(): void {
-        this.on("modify",(target,data:{name:string,type:string}[],callback:Function)=>{
+        this.on("modify",(target,data:{name:string,type:string,value:string}[],callback:Function)=>{
             this.clear();
             this.callback=callback;
             this.$elem.css({transform:"none",display:"block"});
@@ -18,7 +18,7 @@ export class Edit extends BaseComponent<{btn:string}>{
                 return (
                 <div className="field-item">
                     <div className="field-title">{item.name}</div>
-                    <input className="field-input" type={item.type} name={item.name}/>
+                    <input className="field-input" type={item.type} name={item.name} value={item.value}/>
                 </div>);
             });
             input.forEach(item=>{

@@ -15,7 +15,8 @@ export class MdFact extends BaseComponent<{ title: string, lists: FactItemParams
     modify(){
         this.notify("modify",[{
             name:"title",
-            type:"input"
+            type:"input",
+            value:"title"
         }],(data:{name:string,value:string}[])=>{
             data.forEach(item=>{
                 if(item.name=="title"){
