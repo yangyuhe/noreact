@@ -4,18 +4,31 @@ import React from "../../core/react";
 import axios from "axios";
 import { Component } from "../../core/component-manager";
 
+/**@import "./edit.scss" */
 @Component("edit")
 export class Edit extends BaseComponent<{btn:string}>{
     onRendered(): void {
+        this.on("modify",(target,data:{name:string,type:string}[])=>{
+            console.log(data);
+            this.$elem.css({display:"block"});
+            let input:VNode[]=data.map(item=>{
+                return (
+                <div>
+                    <h4 class="field-title">{item.name}</h4>
+                    <input class="field-input" type={item.type} name={item.name}/>
+                </div>);
+            });
+            input.forEach(item=>{
+                this.$elem.append(item.ToDom());
+            });
+
+        });
     }    
     onSave(){
-        axios.post("/save",{name:"edit",data:{btn:"修改"}}).then(res=>{
-            console.log(res);
-        });
-        this.notify("bug",1,2,3);
+       
     }
     protected Render(): VNode {
-        return <div>
+        return <div class="edit">
             <button onClick={this.onSave.bind(this)}>{this.params.btn}</button>
         </div>
     }

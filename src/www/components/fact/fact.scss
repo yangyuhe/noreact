@@ -1,4 +1,12 @@
 $item-margin:20px;
+.fact{
+    background: #aaa;
+    
+}
+.fact-title{
+    font-size: 20px;
+    font-weight: bold;
+}
 .fact-list{
     margin: 10px 200px;
     .fact-item{
@@ -7,5 +15,10 @@ $item-margin:20px;
         &:nth-of-type(3n+2){
             margin:0px 20px;
         }
+    }
+    &:after{
+        display: block;
+        content: "";
+        clear: both;
     }
 }
