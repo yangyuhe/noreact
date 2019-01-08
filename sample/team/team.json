@@ -1,12 +1,6 @@
 {
     "name":"team",
     "data": {
-        "siteId": 703,
-        "name": "team name",
-        "title": "Real Estate Team",
-        "description": "<p>Team Slogan</p><p>Team Slogan</p><p>Team Slogan</p><p>Team Slogan</p>",
-        "banner": "//cdn.chime.me/image/fs01/agnentinfo/20171123/1/original_35341860845310729.jpeg https://static.chimeroi.com/gg-site/image/michelle/michelle-team-m.jpg",
-        "introduce": "We are here 24/7 to assist you with your home buying and selling needs from start to finish.",
         "teamMemberAgents": [
             {
             "id": 692,
@@ -222,93 +216,13 @@
                 ],
                 "detailUrl": "/agent/team_member4/692",
                 "fullName": "team member4"
-                },
-                {
-                "id": 2757,
-                "siteId": 703,
-                "firstName": "Carly",
-                "lastName": "Farrell",
-                "image": "https://cdn.chime.me/image/fs02/sitebuild/20181030/4/w240_original_1373134304458965.jpeg",
-                "phone": "541-600-9369",
-                "telephone": "",
-                "email": "carly@emeraldcityrepro.com",
-                "position": "Agent",
-                "license": "201228084",
-                "shortIntroduction": null,
-                "longIntroduction": "My name is Carly Farrell, Real Estate Broker for Hybrid Real Estate. I have lived in the Pacific Northwest my whole life, apart from living and traveling internationally for a few years. I graduated from Boise State with a Bachelor’s in Criminal Justice. After graduating I worked as a Paralegal, but ultimately decided to follow my passion into real estate.As a third-generation real estate agent, my mom, grandma and grandpa have taught me not only the challenges of the business but also how rewarding it can be connecting and getting to know clients on a personal level. Whether you are a first time home buyer, or looking for your dream home, I am confident that you will be happy with the level of service I provide! I enjoy the outdoors, volunteering, DOGS and discovering all kinds of delicious places to dine in Lane County with my fiancé. When it comes to real estate, I am responsible, reliable and have a can-do attitude at all times. I know that buying and/or selling a home can be an emotional experience that is why I will always go the extra mile to help guide you to create a stress free real estate transaction. I look forward to working with you!",
-                "externalUrl": "",
-                "licenseWithState": null,
-                "homePlace": null,
-                "language": null,
-                "proudestMoment": null,
-                "challenge": null,
-                "alarmClock": null,
-                "favoriteNeighborhood": null,
-                "motto": null,
-                "photos": [],
-                "perfectMoment": null,
-                "job": null,
-                "inspiration": null,
-                "companyImpress": null,
-                "cityImpress": null,
-                "hobby": null,
-                "trait": null,
-                "isCreator": 0,
-                "agentSocialNetworks": [],
-                "detailUrl": "/agent/Carly_Farrell/2757",
-                "fullName": "Carly Farrell"
-                }
-        ],
-        "teamLeaderAgents": [
-            {
-            "id": 692,
-            "siteId": 703,
-            "firstName": "team",
-            "lastName": "member4",
-            "image": "//cdn.chime.me/image/fs01/agnentinfo/20180116/23/original_1152881491683139.jpeg",
-            "phone": "234214member4",
-            "telephone": "",
-            "email": "2222223443member4@163.com",
-            "position": "member4",
-            "license": "01936871",
-            "shortIntroduction": "member4 Short Introduction",
-            "longIntroduction": "member4 Self Introduction",
-            "externalUrl": "http://testmember4.chime.me",
-            "licenseWithState": null,
-            "homePlace": null,
-            "language": null,
-            "proudestMoment": null,
-            "challenge": null,
-            "alarmClock": null,
-            "favoriteNeighborhood": null,
-            "motto": null,
-            "photos": [],
-            "perfectMoment": null,
-            "job": null,
-            "inspiration": null,
-            "companyImpress": null,
-            "cityImpress": null,
-            "hobby": null,
-            "trait": null,
-            "isCreator": 0,
-            "agentSocialNetworks": [
-            {
-            "id": 111,
-            "agentId": 692,
-            "type": 4,
-            "url": "http://www.member4.com",
-            "socialNetwork": "zillow"
-            }
-            ],
-            "detailUrl": "/agent/team_member4/692",
-            "fullName": "team member4"
             },
             {
             "id": 2757,
             "siteId": 703,
             "firstName": "Carly",
             "lastName": "Farrell",
-            "image": "https://cdn.chime.me/image/fs02/sitebuild/20181030/4/original_1373134304458965.jpeg",
+            "image": "https://cdn.chime.me/image/fs02/sitebuild/20181030/4/w240_original_1373134304458965.jpeg",
             "phone": "541-600-9369",
             "telephone": "",
             "email": "carly@emeraldcityrepro.com",
@@ -338,8 +252,6 @@
             "detailUrl": "/agent/Carly_Farrell/2757",
             "fullName": "Carly Farrell"
             }
-        ],
-        "pcBanner": "//cdn.chime.me/image/fs01/agnentinfo/20171123/1/original_35341860845310729.jpeg",
-        "mobileBanner": "https://static.chimeroi.com/gg-site/image/michelle/michelle-team-m.jpg"
+        ]
     }
 }

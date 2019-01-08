@@ -27,6 +27,11 @@ export function GetJSModule(module:string){
                 return module.Card;
             });
         }
+        if(module=="search"){
+            promise=import(/*webpackChunkName:"search" */"./components/search/search").then(module=>{
+                return module.SearchModule;
+            });
+        }
         if(module=="edit"){
             promise=import(/*webpackChunkName:"edit" */"./components/edit/edit").then(module=>{
                 return module.Edit;
