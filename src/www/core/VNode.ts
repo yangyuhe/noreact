@@ -38,6 +38,10 @@ export class VNode{
     }
 
     ToHtml():string{
+        console.log(this.name);
+        if(this.name=="span"){
+            console.log(this.name);
+        }
         let innerhtmls:string[]=[];
         
         innerhtmls.push(`<${this.name} `);
@@ -53,6 +57,9 @@ export class VNode{
         });
         innerhtmls.push(">");
         this.children.forEach(child=>{
+            if(child=="span" ){
+                console.log("span");
+            }
             if(child instanceof VNode){
                 let res=child.ToHtml();
                 innerhtmls.push(res);

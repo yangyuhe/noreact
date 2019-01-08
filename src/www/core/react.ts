@@ -8,7 +8,24 @@ class React{
         this.counter=0;
     }
     createElement(Elem:string|ComponentConstructor<any>,attrs:{[key:string]:any},...children:(VNode|VNode[]|string)[]) :VNode{
-        
+        let allchildren:(VNode|string)[]=[];
+        children.forEach(child=>{
+            if(child instanceof Array){
+                child.forEach(c=>{
+                    allchildren.push(c);
+                });
+                return;
+            }
+            if(typeof(child)=="string"){
+                allchildren.push(child);
+                return;
+            }
+            if(child instanceof VNode){
+                allchildren.push(child);
+                return;
+            }
+        });
+
         let vnode:VNode;
         if(typeof Elem=="string"){
             vnode=new VNode(Elem);
@@ -19,33 +36,22 @@ class React{
                     vnode.AddAttr(key,attrs[key]);
                 }
             }
+            allchildren.forEach(child=>{
+                if(Elem=="span"){
+                    console.log(Elem);
+                }
+                vnode.AddChild(child);
+                if(child instanceof VNode){
+                    child.SetParent(vnode);
+                }
+            });
         }
         else{
             let elem=new Elem(attrs);
+            elem.SetChildren(allchildren);
             vnode=elem.GetVNode();
             vnode.SetObj(elem);
         }
-        
-        children.forEach(child=>{
-            if(child instanceof Array){
-                child.forEach(c=>{
-                    vnode.AddChild(c);
-                    c.SetParent(vnode);
-                });
-                return;
-            }
-            if(typeof(child)=="string"){
-                vnode.AddChild(child);
-                return;
-            }
-            
-            if(child instanceof VNode){
-                vnode.AddChild(child);
-                child.SetParent(vnode);
-                return;
-            }
-            
-        });
         
         return vnode;
     }

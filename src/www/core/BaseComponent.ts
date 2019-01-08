@@ -7,7 +7,10 @@ export abstract class BaseComponent<T>{
     protected elem:HTMLElement;
     private eventRegister:{[event:string]:Function[]}={};
     protected _name:string;
+    protected children:(VNode|string)[]=[];
     constructor(protected params:T){
+        if(!params)
+            (this.params as any)={};
     }
     abstract onRendered():void;
     protected abstract Render():VNode;
@@ -54,6 +57,12 @@ export abstract class BaseComponent<T>{
     AttachElement(elem:HTMLElement){
         this.elem=elem;
         this.$elem=$(elem);
+    }
+    GetChild(){
+        return this.root.GetChildren();
+    }
+    SetChildren(children:(VNode|string)[]){
+        this.children=children;
     }
 }
 export interface ComponentConstructor<T>{
