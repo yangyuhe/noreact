@@ -12,10 +12,11 @@ export class MdFact extends BaseComponent<FactItemParams[]>{
         console.log("hello")
     }    
     protected Render(): VNode {
-        return <div className="fact-list">
+        return (<div className="fact-list">
         {this.params.map(item=>{
             return <FactItem {...item}></FactItem>;
         })}
-        </div>;
+        <button onClick={()=>{this.broadcast("remove","hello",{age:22})}}>删除所有</button>
+        </div>);
     }
 }

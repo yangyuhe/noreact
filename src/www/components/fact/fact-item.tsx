@@ -4,8 +4,20 @@ import React from "../../core/react";
 import {RatioImage} from "../../common/ratio-image/RatioImage";
 
 export class FactItem extends BaseComponent<FactItemParams>{
+    private intervalId=null;
     onRendered(): void {
-    
+        this.intervalId=setInterval(() => {
+            console.log(this.params.des);
+        }, 1000);
+    }
+    constructor(params:FactItemParams){
+        super(params);
+        this.on("remove",(p1,p2)=>{
+            console.log("p1:"+p1,"p2"+p2);
+            if(this.intervalId)
+                clearInterval(this.intervalId);
+            this.$elem.remove();
+        });
     }
     test(){
         alert("hello")

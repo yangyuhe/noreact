@@ -44,11 +44,6 @@ class React{
                 child.SetParent(vnode);
                 return;
             }
-            try{
-                vnode.AddChild(JSON.stringify(child));
-            }catch(err){
-                console.error(err);
-            }
             
         });
         

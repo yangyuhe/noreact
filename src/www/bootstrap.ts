@@ -12,23 +12,25 @@ if($noreact_roots){
                 let component:BaseComponent<any>=new module(root.data);
                 let tree=component.GetVNode();
                 tree.SetObj(component);
-                RestoreVNode(tree);
+                RestoreVNode(tree,null);
             });
     });
 }
 
-let ws=new WebSocket("ws://localhost:8002/noreact-tool");
-ws.onmessage=msg=>{
-    if(msg.data=="refresh"){
-        window.location.reload();
-    }
-};
+// let ws=new WebSocket("ws://localhost:8002/noreact-tool");
+// ws.onmessage=msg=>{
+//     if(msg.data=="refresh"){
+//         window.location.reload();
+//     }
+// };
 
-function RestoreVNode(vnode:VNode){
+function RestoreVNode(vnode:VNode,elem:HTMLElement){
     let nodeId=vnode.GetAttr(VNODE_ID);
     let selector=`[${VNODE_ID}='${nodeId}']`;
-    let dom=document.querySelector(selector) as HTMLElement;
+
+    let dom=(elem || document).querySelector(selector) as HTMLElement;
     if(dom){
+        dom.removeAttribute(VNODE_ID);
         if(vnode.HasObjAttached()){
             vnode.GetObj().AttachElement(dom);
             vnode.GetObj().onRendered();
@@ -38,11 +40,11 @@ function RestoreVNode(vnode:VNode){
             if(value)
                 NO_RENDERED_ATTRS[attrname](dom,value);
         }
+        vnode.GetChildren().forEach(child=>{
+            if(child instanceof VNode)
+                RestoreVNode(child,dom);
+        });
     }
-    vnode.GetChildren().forEach(child=>{
-        if(child instanceof VNode)
-            RestoreVNode(child);
-    });
 }
 
 
