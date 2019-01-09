@@ -12,7 +12,7 @@ export class SearchItem extends BaseComponent<SearchItemParams>{
         const { searchTitle, counts } = this.params;
         return (
             <li>
-                <a href="/search/quick/${list.searchLabel}" title={searchTitle}>
+                <a href="javascript:void(0);" title={searchTitle}>
                     <span class="search-title">{searchTitle}</span>
                     <span class="hot-house">HOT</span>
                     <span class="num" data-format="number">{counts}</span>

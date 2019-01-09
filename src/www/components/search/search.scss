@@ -1,22 +1,20 @@
 .md-quick-search {
-    width: 1000px;
+    max-width: 1000px;
     margin: 0 auto;
     .list {
         overflow: hidden;
         .quick-list {
             width: calc(100% + 20px);
-            margin-right: -20px;
-            margin-top: -20px;
             overflow: hidden;
             li {
                 width: calc((100% - 100px) / 3);
-                float: left;
                 list-style: none;
                 position: relative;
+                display: inline-block;
                 box-sizing: content-box;
-                padding: 20px 19px 0;
                 height: 40px;
                 line-height: 40px;
+                padding-left: 30px;
                 a{
                     display: flex;
                     align-items: center;
@@ -41,14 +39,12 @@
                     text-align: right;
                     color: #ff900a;
                     position: relative;
-                    top: -2px;
                 }
                 .num {
                     position: absolute;
                     right: 19px;
                 }
                 &:nth-child(2n + 1) {
-                    padding-left: 0;
                     background: #f5f6fa;
                 }
                 &:after {

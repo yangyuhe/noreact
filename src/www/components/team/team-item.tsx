@@ -12,7 +12,7 @@ export class TeamItem extends BaseComponent<TeamItemParams>{
         const { image, fullName, position, licenseName, license, detailUrl } = this.params;
         return (
             <li class="grid-item">
-                <a href={detailUrl}>
+                <a href="javascript:void(0);">
                     <div class="grid-team">
                         <img src={image}/>
                         <div class="grid-information">
