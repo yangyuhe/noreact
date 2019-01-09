@@ -22,10 +22,13 @@ export class BannerModule extends BaseComponent<BannerParams[]>{
 				<div className="slider_content"
 				>
 					{
-						this.params.map((item, index) => {
+						this.params.map((item) => {
+							const bannerImg = {
+								background: `url(${item}) center center / cover`
+							};
 							return(
 								<div className="slider_url">
-									<div className="slider_each" style={`background: url(${item}) center center / cover`}></div>
+									<div className="slider_each" style={bannerImg}></div>
 								</div>
 							)
 						})
