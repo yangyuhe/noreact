@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { Middleware } from "./core/linked";
+import { SaveModuleCustomInfo } from "../www/core/custominfo-manager";
 
 export let Save:Middleware=function(req,resp){
     req.setEncoding("utf8");
@@ -12,17 +13,7 @@ export let Save:Middleware=function(req,resp){
         try{
             let postobj=JSON.parse(body);
             if(postobj.name && postobj.data){
-                let res=WriteFile(postobj.name,postobj.data,path.resolve(process.cwd(),"sample"));
-                if(res){
-                    resp.json({
-                        status:"ok"
-                    });
-                }else{
-                    resp.json({
-                        status:"fail",
-                        message:"保存失败"
-                    });
-                }
+                SaveModuleCustomInfo(postobj.name,postobj.data);
             }else{
                 resp.json({
                     message:"提交数据缺少name或者data"
@@ -56,7 +47,7 @@ function WriteFile(name:string,data:any,dir:string):boolean{
                     throw new Error(`模块名不匹配[${oldobj.name}]-[${name}]`);
                 }
                 oldobj.data=data;
-                fs.writeFileSync(filepath,JSON.stringify(oldobj));
+                fs.writeFileSync(filepath,JSON.stringify(oldobj,null,4));
                 return true;
             }
         }

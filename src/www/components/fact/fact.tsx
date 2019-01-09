@@ -9,19 +9,6 @@ import { FactItem, FactItemParams } from "./fact-item";
 @Component("fact")
 export class MdFact extends BaseComponent<{ title: string, lists: FactItemParams[] }>{
     onRendered(): void {
-        this.on("bug", (target, ...args: any[]) => {
-            console.log("fuck", target, args);
-        });
-        this.on("save",()=>{
-            axios.post("/save",{
-                name:this._name,
-                data:this.params
-            }).then(()=>{
-                alert("成功");
-            },err=>{
-                alert("失败");
-            });
-        });
     }
     modify(){
         this.notify("modify",[{
