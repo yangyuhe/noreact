@@ -18,11 +18,12 @@ export class FactItem extends BaseComponent<FactItemParams>{
         return <div  className="fact-item">
             <RatioImage ratio={0.3} picUrl={this.params.pic}></RatioImage>
             <div className="des">{this.params.des}</div>
-            <Span>hello</Span>
+            <Span {...this.params.span}>hello</Span>
         </div>;
     }
 }
 export interface FactItemParams{
     pic:string,
-    des:string
+    des:string,
+    span:SpanParams
 }

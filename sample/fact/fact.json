@@ -5,11 +5,17 @@
         "lists": [
             {
                 "pic": "//cdn.chime.me/image/fs01/agnentinfo/20180301/19/w320_original_4938583830801003.jpeg",
-                "des": "3123123"
+                "des": "3123123",
+                "span":{
+                    "background":"red"
+                }
             },
             {
                 "pic": "//cdn.chime.me/image/fs01/agnentinfo/20180301/19/w320_original_4940993593045866.png",
-                "des": "222"
+                "des": "222",
+                "span":{
+                    "background":"blue"
+                }
             },
             {
                 "pic": "https://cdn.chime.me/image/fs01/agnentinfo/20171018/20/w320_original_32293856897696085.jpeg",
