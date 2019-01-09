@@ -9,6 +9,23 @@ import { FactItem, FactItemParams } from "./fact-item";
 @Component("fact")
 export class MdFact extends BaseComponent<{ title: string, lists: FactItemParams[] }>{
     onRendered(): void {
+        this.on("save",(target,index,data)=>{
+            if(target.Name=="span"){
+                let span=this.params.lists[index].span;
+                if(!span)
+                    (span as any)={};
+                data.forEach(item=>{
+                    span[item.name]=item.value;
+                });
+                this.params.lists[index].span=span;
+            }
+            axios.post("/save",{name:this.Name,data:this.params}).then(res=>{
+                alert("成功");
+            },err=>{
+                alert("失败");
+                console.log(err);
+            })
+        });
     }
     modify(){
         this.notify("modify",[{
@@ -29,8 +46,8 @@ export class MdFact extends BaseComponent<{ title: string, lists: FactItemParams
             <div className="fact">
                 <h1 className="fact-title">{this.params.title}</h1>
                 <div className="fact-list">
-                    {this.params.lists.map(item => {
-                        return <FactItem {...item}></FactItem>;
+                    {this.params.lists.map((item,index) => {
+                        return <FactItem index={index} {...item}></FactItem>;
                     })}
                     
                 </div>

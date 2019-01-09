@@ -13,7 +13,7 @@ export function Component(name:string){
         }
         componentSet[name]=component;
         return <any>class extends component{
-            _name:string=name;
+            Name:string=name;
         };
     };
 }

@@ -6,7 +6,7 @@ export abstract class BaseComponent<T>{
     protected $elem:JQuery;
     protected elem:HTMLElement;
     private eventRegister:{[event:string]:Function[]}={};
-    protected _name:string;
+    public Name:string;
     protected children:(VNode|string)[]=[];
     constructor(protected params:T){
         if(!params)
