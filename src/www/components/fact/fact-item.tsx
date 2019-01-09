@@ -2,11 +2,12 @@ import { BaseComponent } from "../../core/BaseComponent";
 import { VNode } from "../../core/VNode";
 import React from "../../core/react";
 import {RatioImage} from "../../common/ratio-image/RatioImage";
-import { Span } from "../../common/span/span";
+import { Span, SpanParams } from "../../common/span/span";
 
 export class FactItem extends BaseComponent<FactItemParams>{
     private intervalId=null;
     onRendered(): void {
+        console.log(this.params);
     }
     constructor(params:FactItemParams){
         super(params);

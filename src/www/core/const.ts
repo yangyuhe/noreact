@@ -4,6 +4,11 @@ export const CONTEXT_ATTRS:{[name:string]:(elem:HTMLElement,value:any)=>void}={
     },
     "onMouseOver":(elem,value)=>{
         elem.addEventListener("mouseover",value);
+    },
+    "style":(elem,value)=>{
+        for(let key in value){
+            elem.style[key]=value[key];
+        }
     }
 };
 export const VARIABLE_ATTRS:{[name:string]:string}={

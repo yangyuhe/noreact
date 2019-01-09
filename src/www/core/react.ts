@@ -1,6 +1,8 @@
 import { VNode as VNode } from "./VNode";
 import { ComponentConstructor } from "./BaseComponent";
 import { VNODE_ID } from "./const";
+import { ComponentName } from "./component-manager";
+import { GetModuleCustomeInfo } from "./custominfo-manager";
 
 class React{
     private counter=0;
@@ -47,6 +49,15 @@ class React{
             });
         }
         else{
+            let name=ComponentName(Elem);
+            if(name){
+                let info=GetModuleCustomeInfo(name);
+                if(info){
+                    Object.assign(attrs,info);
+                }    
+            }
+            
+
             let elem=new Elem(attrs);
             elem.SetChildren(allchildren);
             vnode=elem.GetVNode();

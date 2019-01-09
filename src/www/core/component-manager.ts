@@ -36,3 +36,14 @@ export function ComponentFactory(name:string,data:any){
 export function ComponentExist(name:string):boolean{
     return componentSet[name]!=null;
 }
+/**
+ * 获取组件名
+ */
+export function ComponentName(cons:ComponentConstructor<any>):string{
+    for(let key in componentSet){
+        if(componentSet[key]==cons){
+            return key;
+        }
+    }
+    return null;
+}
