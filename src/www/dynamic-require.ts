@@ -37,6 +37,11 @@ export function GetJSModule(module:string){
                 return module.Edit;
             });
         }
+        if(module=="banner"){
+            promise=import(/*webpackChunkName:"banner" */"./components/banner/banner").then(module=>{
+                return module.BannerModule;
+            });
+        }
         if(!promise)
             throw new Error("no specified module found:"+module);
         return promise;
