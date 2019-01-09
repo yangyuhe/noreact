@@ -6,44 +6,46 @@ import { SaveModuleCustomInfo } from "../../core/custominfo-manager";
 
 @Component("span")
 export class Span extends BaseComponent<SpanParams>{
+    constructor(params:SpanParams){
+        super(params);
+        this.params.background=this.params.background||'blue';
+        this.params.height=this.params.height||'30px';
+        this.params.border=this.params.border||'1px solid yellow';
+    }
     onRendered(): void {
-        this.on("result",(target,data:{name:string,value:string}[])=>{
-            
+    }    
+    modify(){
+        let items=[
+            {name:"border",type:"input",value:this.params.border},
+            {name:"background",type:"input",value:this.params.background},
+            {name:"height",type:"input",value:this.params.height}
+        ];
+
+        this.notify("modify",items,(data:{name:string,value:string}[])=>{
             data.forEach(item=>{
-                if(item.name=="span border"){
-                    this.params.border=item.value;
+                if(item.name=="border"){
                     this.$elem.css({border:item.value});
                     return;
                 }
-                if(item.name=="span background"){
-                    this.params.background=item.value;
+                if(item.name=="background"){
                     this.$elem.css({background:item.value});
                     return;
                 }
-                if(item.name=="span height"){
-                    this.params.height=item.value;
+                if(item.name=="height"){
                     this.$elem.css({height:item.value});
                     return;
                 }
             });
-            SaveModuleCustomInfo(this._name,this.params);
-        });
-    }    
-    modify(){
-        let items=[
-            {name:"span border",type:"input",value:""},
-            {name:"span background",type:"input",value:""},
-            {name:"span height",type:"input",value:""}
-        ];
 
-        this.notify("modify",items);
+            this.emit("save",this.params.index,data);
+        });
     }
     protected Render(): VNode {
         let style={
-            border:this.params.border || '1px solid yellow',
+            border:this.params.border,
             display:"inline-block",
-            height:this.params.height||'30px',
-            'background-color':this.params.background||'blue'
+            height:this.params.height,
+            'background-color':this.params.background,
         };
         return <span onClick={this.modify.bind(this)} style={style}>{this.children}</span>
     }
@@ -52,5 +54,6 @@ export class Span extends BaseComponent<SpanParams>{
 export interface SpanParams{
     border?:string,
     height?:string,
-    background?:string
+    background?:string,
+    index:number
 }

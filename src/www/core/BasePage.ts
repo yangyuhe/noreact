@@ -6,7 +6,7 @@ export abstract class BasePage<T> extends BaseComponent<T>{
         try{
             let data=JSON.stringify(this.params);
             vnode.AddChild(`<script>
-                var $noreact_roots=[{name:${this._name},data:${data}}];
+                var $noreact_roots=[{name:${this.Name},data:${data}}];
             </script>`);
             vnode.AddChild(`<script src="http://${config.webpack_host}:${config.webpack_port}/bootstrap.js"></script>`);
 

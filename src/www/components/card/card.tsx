@@ -23,7 +23,7 @@ export class Card extends BaseComponent<CardItemParams[]>{
             });
             this.$elem.find(".ratio-image-inner").css("border", data[0].value);
             axios.post("/save",{
-                name:this._name,
+                name:this.Name,
                 data:this.params
             })
         });
