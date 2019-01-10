@@ -1,6 +1,0 @@
-{
-    "node_host":"127.0.0.1",
-    "node_port":8001,
-    "webpack_host":"127.0.0.1",
-    "webpack_port":8003
-}

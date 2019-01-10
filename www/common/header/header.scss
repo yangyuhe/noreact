@@ -1,0 +1,45 @@
+$menuHeight:75px;
+.header{
+    width: 100%;
+    height: $menuHeight;
+    display: flex;
+    background: #242d49;
+    opacity: 0.6;
+    color: white;
+    .menu{
+        margin: 0 10px;
+        height: 100%;
+        line-height: $menuHeight;
+        cursor: pointer;
+        min-width: 80px;
+        text-align: center;
+        text-transform: uppercase;
+        position: relative;
+        font-size: 12px;
+        &:hover{
+            .indicator{
+                display: block;
+            }
+        }
+        .indicator{
+            position: absolute;
+            height: 4px;
+            bottom: 0px;
+            left: 0px;
+            right: 0px;
+            background: #FFC03A;
+            display: none;
+        }
+    }
+    .more-menu{
+        position: absolute;
+        right: 0;
+        top: 0;
+        height: $menuHeight;
+        width: $menuHeight;
+        font-family: "icons-font";
+        font-size: 20px;
+        text-align: center;
+        line-height: $menuHeight;
+    }
+}

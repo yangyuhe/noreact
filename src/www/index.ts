@@ -1,7 +1,0 @@
-export * from "./components/fact/fact";
-export * from "./components/team/team";
-export * from "./common/header/Header";
-export * from "./components/card/card";
-export * from "./components/search/search";
-export * from "./components/edit/edit";
-export * from "./components/banner/banner";
