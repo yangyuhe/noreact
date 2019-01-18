@@ -10,6 +10,8 @@ import {data1} from "./card-data";
 @Component("card")
 export class CardList extends BaseComponent<CardsParam>{
     private static border="border";
+    private show=false;
+    private temp:CardItemParams=null;
     constructor(params:CardsParam){
         super(params);
         if(params.cards==null){
@@ -19,26 +21,10 @@ export class CardList extends BaseComponent<CardsParam>{
     onRendered(): void {
         console.log("hello")
     }
-    modify() {
-        this.notify("modify",[{
-            name:"border",
-            type:"input",
-            value: "3px solid red"
-        }],(data:{name:string,value:string}[])=>{
-            this.params.cards.forEach((item)=>{
-                item.border = data[0].value;
-                
-            });
-            this.$elem.find(".ratio-image-inner").css("border", data[0].value);
-            axios.post("/save",{
-                name:this.Name,
-                data:this.params
-            })
-        });
-    }
+    
     protected Render(): VNode {
         return (<div className="card-list">
-
+            {this.show?<Card {...this.temp}></Card>:null}
             {this.params.cards.map(item=>{
                 return <Card {...item}></Card>;
             })}

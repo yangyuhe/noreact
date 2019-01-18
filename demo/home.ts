@@ -1,7 +1,8 @@
 import {AboutPage} from "../www/pages/About";
 document.addEventListener("DOMContentLoaded",()=>{
     let about=new AboutPage(null);
-    let dom=about.ToDom();
+    let tree=about.GetVNode();
+    let dom=tree.ToDom();
     document.body.append(dom);
-    about.Rendered();
+    tree.Rendered();
 });

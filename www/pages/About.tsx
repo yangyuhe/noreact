@@ -1,31 +1,12 @@
-import { BasePage } from "../core/BasePage";
-import { VNode } from "../core/VNode";
-import { Component } from "../core/component-manager";
-import { Header, Menu, HeaderParam } from "../common/header/Header";
+import { ToDoV2 } from "../components/todo/todo-v2";
+import { BaseComponent } from "../core/BaseComponent";
 import React from "../core/react";
-import { CardList } from "../components/card/card-list";
-import { CardItemParams } from "../components/card/card";
-import { TeamModule, TeamModuleParams } from "../components/team/team";
-/**@import "../assets/css/common.scss"; */
-import { Edit } from "../components/edit/edit";
-@Component("about-page")
-export class AboutPage extends BasePage<AboutPageParams>{
-    constructor(params: AboutPageParams) {
-        super(params);
-    }
-    onRendered(): void {
-    }
+import { VNode } from "../core/VNode";
+import { ToDoV1 } from "../components/todo/todo-v1";
+
+export class AboutPage extends BaseComponent<{}>{
+    private todos:{text:string,id:number}[]=[];
     protected Render(): VNode {
-        return <div>
-            <Header {...this.params.header}></Header>
-            <CardList cards={this.params.cards}></CardList>
-            <TeamModule {...this.params.teams}></TeamModule>
-            <Edit></Edit>
-        </div>
+        return <ToDoV1 todos={this.todos}></ToDoV1>;
     }
-}
-export interface AboutPageParams {
-    header:HeaderParam,
-    cards?: CardItemParams[],
-    teams?: TeamModuleParams
 }

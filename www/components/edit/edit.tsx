@@ -10,38 +10,14 @@ import { Event } from "../../const";
 @Component("edit")
 export class Edit extends BaseComponent<{}>{
     onRendered(): void {
-        this.on(Event.CUSTOM, (target, data: { name: string, type: string, value: string }[]) => {
-            this.$elem.css({transform:"translateY(0)"});
-            this.clear();
-            let input: VNode[] = data.map(item => {
-                return (
-                    <div className="field-item">
-                        <div className="field-title">{item.name}</div>
-                        <input className="field-input" type={item.type} name={item.name} value={item.value} />
-                    </div>);
-            });
-            input.forEach(item => {
-                let $dom = $(item.ToDom());
-                this.$elem.find(".edit-list").append($dom);
-            });
-        });
+        
     }
     clear() {
-        this.$elem.find('.edit-list').empty();
     }
     onSave() {
-        let data: { name: string, value: string }[] = [];
-        let fields = this.$elem.find(".field-item");
-        for (let i = 0; i < fields.length; i++) {
-            let name = $(fields[i]).find(".field-title").text();
-            let value: any = $(fields[i]).find(".field-input").val();
-            data.push({ name: name, value: value });
-        }
-
-        this.notify(Event.CUSTOM_OVER,data);
+        
     }
     onCancel() {
-        this.$elem.css({ transform: "translateY(100%)" });
     }
     protected Render(): VNode {
         return <div class="edit">

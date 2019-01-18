@@ -2,7 +2,8 @@ import { AboutPage } from "../www/pages/About";
 import { Middleware } from "./core/linked";
 export let About: Middleware = function (req, res) {
     let about=new AboutPage(null);
-    let node=about.ToHtml();
+    let tree=about.GetVNode();
+    let node=tree.ToHtml();
     let html=`<!DOCTYPE html>
     <html lang="en">
     <head>

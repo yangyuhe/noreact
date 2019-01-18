@@ -2,7 +2,6 @@ import { BaseComponent } from "../../core/BaseComponent";
 import { VNode } from "../../core/VNode";
 import React from "../../core/react";
 import { Component } from "../../core/component-manager";
-import { SaveModuleCustomInfo } from "../../core/custominfo-manager";
 
 @Component("span")
 export class Span extends BaseComponent<SpanParams>{
@@ -21,24 +20,7 @@ export class Span extends BaseComponent<SpanParams>{
             {name:"height",type:"input",value:this.params.height}
         ];
 
-        this.notify("modify",items,(data:{name:string,value:string}[])=>{
-            data.forEach(item=>{
-                if(item.name=="border"){
-                    this.$elem.css({border:item.value});
-                    return;
-                }
-                if(item.name=="background"){
-                    this.$elem.css({background:item.value});
-                    return;
-                }
-                if(item.name=="height"){
-                    this.$elem.css({height:item.value});
-                    return;
-                }
-            });
-
-            this.emit("save",this.params.index,data);
-        });
+        
     }
     protected Render(): VNode {
         let style={

@@ -1,36 +1,46 @@
-import { VNode as VNode } from "./VNode";
+import { VNode } from "./VNode";
 import { ComponentConstructor } from "./BaseComponent";
-import { VNODE_ID } from "./const";
-import { ComponentName } from "./component-manager";
-import { GetModuleCustomeInfo } from "./custominfo-manager";
+import { VNODE_ID } from "./attribute";
 
 class React{
     private counter=0;
     ResetCounter(){
         this.counter=0;
     }
+    private addToChild(child:VNode|any,index:string,children:VNode[]){
+        if(child instanceof VNode){
+            child.AddAttr("key",index);
+            children.push(child);
+            return;
+        }else{
+            let vnode=new VNode("text");
+            vnode.AddAttr("key",index);
+            let json=child+"";
+            vnode.SetText(json);
+            children.push(vnode);
+            return;
+        }
+    }
     createElement(Elem:string|ComponentConstructor<any>,attrs:{[key:string]:any},...children:(VNode|VNode[]|string)[]) :VNode{
-        let allchildren:(VNode|string)[]=[];
-        children.forEach(child=>{
+        let allchildren:VNode[]=[];
+        children.forEach((child,index)=>{
             if(child instanceof Array){
-                child.forEach(c=>{
-                    allchildren.push(c);
+                child.forEach((c,subindex)=>{
+                    let key=c.GetAttr("key");
+                    if(key!=null)
+                        this.addToChild(c,index+"-"+key,allchildren);
+                    else
+                        this.addToChild(c,index+"-"+subindex,allchildren);
                 });
-                return;
-            }
-            if(typeof(child)=="string"){
-                allchildren.push(child);
-                return;
-            }
-            if(child instanceof VNode){
-                allchildren.push(child);
-                return;
+            }else{
+                this.addToChild(child,index+"",allchildren);
             }
         });
-
-        let vnode:VNode;
+        
+        
         if(typeof Elem=="string"){
-            vnode=new VNode(Elem);
+            let vnode:VNode=new VNode("element");
+            vnode.SetTag(Elem);
             vnode.AddAttr(VNODE_ID,this.counter);
             this.counter++;
             if(attrs!=null){
@@ -39,22 +49,23 @@ class React{
                 }
             }
             allchildren.forEach(child=>{
-                if(Elem=="span"){
-                    console.log(Elem);
-                }
-                vnode.AddChild(child);
-                if(child instanceof VNode){
-                    child.SetParent(vnode);
-                }
+                vnode.PushChild(child);
             });
+            return vnode;
         }
         else{
             let mvvm=new Elem(attrs);
             mvvm.SetChildren(allchildren);
-            vnode=mvvm.GetVNode();
+            let vnode=new VNode("custom");
+            if(attrs!=null){
+                for(let key in attrs){
+                    vnode.AddAttr(key,attrs[key]);
+                }
+            }
+            vnode.SetInstance(mvvm);
+            mvvm.SetVNode(vnode);
+            return vnode;
         }
-        
-        return vnode;
     }
     
 }

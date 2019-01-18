@@ -4,9 +4,11 @@ import React from "../../core/react";
 import {RatioImage, RatioImageParam} from "../../common/ratio-image/RatioImage";
 import { Event } from "../../const";
 
+/**@import "./card.scss" */
 export class Card extends BaseComponent<CardItemParams>{
     private static border="border";
     private static height="height";
+    private counter=0;
     constructor(params:CardItemParams){
         super(params);
         if(typeof(localStorage)!='undefined'){
@@ -19,32 +21,18 @@ export class Card extends BaseComponent<CardItemParams>{
         }
         
     }
-    onRendered(): void {
-        this.on(Event.CUSTOM_OVER,(target,data:{name:string,value:string}[])=>{
-            data.forEach(item=>{
-                if(item.name==Card.border){
-                    this.$elem.css({border:item.value});
-                    localStorage.setItem(Card.border,item.value);
-                    return;
-                }
-                if(item.name==Card.height){
-                    this.$elem.find(".house-status").css({height:item.value,'line-height':item.value});
-                    localStorage.setItem(Card.height,item.value);
-                    return;
-                }
-            });
-        });
+    onRendered(){
+        console.log("hello")
+        window.setInterval(()=>{
+            console.log(this.counter);
+            this.counter++;
+            this.Refresh();
+        },1000);
     }
     
-    custom(){
-        this.notify(Event.CUSTOM,[{
-            name:Card.border,value:this.params.border
-        },{
-            name:Card.height,value:this.params.height
-        }]);
-    }
+    
     protected Render(): VNode {
-        return <div style={{border:this.params.border}} onClick={this.custom.bind(this)} className="card-item">
+        return <div key={this.params.key} style={{border:this.params.border}} className="card-item">
             <RatioImage  picUrl={this.params.pic} border={this.params.border}  ratio={2}></RatioImage>
             <div class="mask">
                 <div class="house-detail"> 
@@ -55,14 +43,18 @@ export class Card extends BaseComponent<CardItemParams>{
                         <span class="house-trend mg-trend-up">{this.params.detail['trend-up']}</span> 
                     </div> 
                     <p class="house-price">{this.params.detail['house-price']}</p> 
+                    <p style="color:red">{this.counter}</p>
+                    
                 </div>
             </div>
         </div>;
     }
 }
 export interface CardItemParams{
+    id:string,
     detail: any,
     pic: string,
     border: string,
-    height:string
+    height:string,
+    key?:string
 }

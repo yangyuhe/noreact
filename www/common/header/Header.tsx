@@ -34,13 +34,13 @@ export class Header extends BaseComponent<HeaderParam>{
         this.on(Event.CUSTOM_OVER,(target,data:{name:string,value:string}[])=>{
             data.forEach(item=>{
                 if(item.name==Header.indicatorColor){
-                    this.$elem.find(".indicator").css({"background-color":item.value});
                     localStorage.setItem(Header.indicatorColor,item.value);
+                    this.params.indicatorColor=item.value;
                     return;
                 }
                 if(item.name==Header.textColor){
-                    this.$elem.find(".menu").css({color:item.value});
                     localStorage.setItem(Header.textColor,item.value);
+                    this.params.textcolor=item.value;
                     return;
                 }
             });

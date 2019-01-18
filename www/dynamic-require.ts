@@ -37,11 +37,6 @@ export function GetJSModule(module:string){
                 return module.Edit;
             });
         }
-        if(module=="banner"){
-            promise=import(/*webpackChunkName:"banner" */"./components/banner/banner").then(module=>{
-                return module.BannerModule;
-            });
-        }
         if(module=="about-page"){
             promise=import(/*webpackChunkName:"about-page" */"./pages/About").then(module=>{
                 return module.AboutPage;

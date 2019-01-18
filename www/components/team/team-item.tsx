@@ -7,15 +7,7 @@ import { TeamModule } from "./team";
 export class TeamItem extends BaseComponent<TeamItemParams>{
     private static margin="margin";
     onRendered(): void {
-        this.on(Event.CUSTOM_OVER,(target,data:{name:string,value:string}[])=>{
-            data.forEach(item=>{
-                if(item.name==TeamItem.margin){
-                    this.$elem.css({margin:`0px ${item.value}`});
-                    localStorage.setItem(TeamItem.margin,item.value);
-                    return;
-                }
-            });
-        });
+        
     }
     constructor(params:TeamItemParams){
         super(params);

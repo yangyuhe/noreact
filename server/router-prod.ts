@@ -37,7 +37,8 @@ proLinked.Post("/custom",(req,res)=>{
                 }
                 let instance=ComponentFactory(module.name,module.data);
                 if(instance){
-                    html+=instance.ToHtml();
+                    let tree=instance.GetVNode();
+                    html+=tree.ToHtml();
                     suffix.push({name:module.name,data:module.data});
                 }else{
                     throw new Error(`[${module.name}]模块找不到`);
@@ -66,7 +67,8 @@ proLinked.Post("/about-page",(req,res)=>{
         try{
             let module=JSON.parse(data);
             let about=new AboutPage(module);
-            res.html(about.ToHtml());
+            let tree=about.GetVNode();
+            res.html(tree.ToHtml());
         }catch(err){
             res.json({message:err.message,stack:err.stack});
             

@@ -1,5 +1,5 @@
 import { BaseComponent } from "./core/BaseComponent";
-import { CONTEXT_ATTRS, VNODE_ID } from "./core/const";
+import { EVENT_ATTRS, VNODE_ID } from "./core/attribute";
 import { VNode } from "./core/VNode";
 import { GetJSModule } from "./dynamic-require";
 
@@ -14,7 +14,7 @@ if($noreact_roots){
                 let component:BaseComponent<any>=new module(root.data);
                 let tree=component.GetVNode();
                 RestoreVNode(tree,null);
-                component.Rendered();
+                tree.Rendered();
             });
             promises.push(promise);
         }
@@ -34,17 +34,14 @@ function RestoreVNode(vnode:VNode,elem:HTMLElement){
 
     let dom=(elem || document).querySelector(selector) as HTMLElement;
     if(dom){
-        if(vnode.HasMvvmAttached()){
-            vnode.GetMvvm().AttachElement(dom);
-        }
-        for(let attrname in CONTEXT_ATTRS){
+        vnode.AttachDom(dom);
+        for(let attrname in EVENT_ATTRS){
             let value=vnode.GetAttr(attrname);
             if(value)
-                CONTEXT_ATTRS[attrname](dom,value);
+                EVENT_ATTRS[attrname](dom,value);
         }
         vnode.GetChildren().forEach(child=>{
-            if(child instanceof VNode)
-                RestoreVNode(child,dom);
+            RestoreVNode(child,dom);
         });
     }
 }

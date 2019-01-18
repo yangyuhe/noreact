@@ -1,40 +1,90 @@
+import { SerializeAttr, VNODE_ID, ApplyAttr } from "./attribute";
 import { BaseComponent } from "./BaseComponent";
-import { CONTEXT_ATTRS, VARIABLE_ATTRS, VNODE_ID } from "./const";
+import { debug } from "util";
 
 export class VNode{
-    protected name:string="";
-    
-    protected children:(VNode|string)[]=[];
+    /**虚拟节点名称，即标准html的标签名 */
+    protected tag:string="";
+    /**子节点 */
+    protected children:VNode[]=[];
+    /**属性集合 */
     private attrs:{name:string,value:any}[]=[];
+    /**父节点 */
     private parent:VNode=null;
 
-    private mvvm:BaseComponent<any>;
+    /**关联的组件实例，当type='custom'有效 */
+    private instance:BaseComponent<any>;
+    /**关联的实际dom元素 */
+    private dom:HTMLElement|Text;
+    /**节点类型 */
+    private type:"element"|"text"|"custom";
+    /**当时type='text'时这个值才有意义，表示text的内容 */
+    private text:string="";
 
-    private dom:HTMLElement;
-    
-    constructor(name:string){
-        this.name=name;
+
+    constructor(type:"element"|"text"|"custom"){
+        this.type=type;
     }
-    
-    AddChild(child:VNode|string){
+    SetTag(tag:string){
+        this.tag=tag;
+    }
+    GetTag(){
+        return this.tag;
+    }
+    SetText(text:string){
+        this.text=text;
+    }
+    GetText(){
+        return this.text;
+    }
+    SetInstance(component:BaseComponent<any>){
+        this.instance=component;
+    }
+    GetInstance(){
+        return this.instance;
+    }
+    GetParent(){
+        return this.parent;
+    }
+    /**在索引为index位置增加一个child */
+    AddChild(child:VNode,index:number){
+        child.parent=this;
+        let dom=child.ToDom();
+        if(index==-1){
+            this.children.push(child);
+            this.dom.appendChild(dom);
+        }
+        else{
+            this.children.splice(index,0,child);
+            this.dom.insertBefore(dom,this.dom.childNodes[index]);
+        }
+        child.Rendered();
+    }
+    PushChild(child:VNode){
+        child.parent=child;
         this.children.push(child);
+    }
+    RemoveChild(child:VNode){
+        let index=this.children.indexOf(child);
+        this.children.splice(index,1);
+        this.dom.removeChild(child.dom);
     }
     GetChildren(){
         return this.children;
     }
+    /**渲染完毕后的回调 */
     Rendered(){
-        this.dom.removeAttribute(VNODE_ID);
+        if(this.type=="custom")
+            this.instance.onRendered();
+        if(this.type=="element")
+            (this.dom as HTMLElement).removeAttribute(VNODE_ID);
         this.children.forEach(child=>{
-            if(child instanceof VNode){
-                if(child.HasMvvmAttached())
-                    child.GetMvvm().Rendered();
-                else{
-                    child.Rendered();
-                }
-            }
+            child.Rendered();
         });
     }
-
+    GetType(){
+        return this.type;
+    }
     AddAttr(name:string,value:any){
         this.attrs.push({name,value});
     }
@@ -51,121 +101,92 @@ export class VNode{
     }
 
     ToHtml():string{
-        console.log(this.name);
-        if(this.name=="span"){
-            console.log(this.name);
+        if(this.type=="text")
+            return this.text;
+        if(this.type=="custom"){
+            let vnode=this.instance.GetVNode();
+            return vnode.ToHtml();
         }
-        let innerhtmls:string[]=[];
+        if(this.type=="element"){
+            let innerhtmls:string[]=[];
         
-        innerhtmls.push(`<${this.name} `);
-        
-        this.attrs.forEach(attr=>{
-            if(CONTEXT_ATTRS[attr.name]==null){
-                let transferdName=VARIABLE_ATTRS[attr.name];
-                if(transferdName)
-                    innerhtmls.push(`${transferdName}="${attr.value}" `);
-                else
-                    innerhtmls.push(`${attr.name}="${attr.value}" `);
-            }
-        });
-        innerhtmls.push(">");
-        this.children.forEach(child=>{
-            if(child=="span" ){
-                console.log("span");
-            }
-            if(child instanceof VNode){
+            innerhtmls.push(`<${this.tag} `);
+            
+            this.attrs.forEach(attr=>{
+                let attrStr=SerializeAttr(attr.name,attr.value);
+                if(attrStr)
+                    innerhtmls.push(attrStr+" ");
+            });
+            innerhtmls.push(">");
+            this.children.forEach(child=>{
                 let res=child.ToHtml();
                 innerhtmls.push(res);
-                return;
-            }
-            if(typeof(child)=="string"){
-                innerhtmls.push(child);
-                return;
-            }
-        });
-        innerhtmls.push(`</${this.name}>`);
-        return innerhtmls.join("");
+            });
+            innerhtmls.push(`</${this.tag}>`);
+            return innerhtmls.join("");
+        }
     }
-    ToDom():HTMLElement{
-        let elem=document.createElement(this.name);
-        
-        this.attrs.forEach(attr=>{
-            if(CONTEXT_ATTRS[attr.name]!=null){
-                CONTEXT_ATTRS[attr.name](elem,attr.value);
-                return;
-            }
-            if(VARIABLE_ATTRS[attr.name]!=null){
-                let transferdName=VARIABLE_ATTRS[attr.name];
-                elem.setAttribute(transferdName,attr.value);
-                return;
-            }
-            elem.setAttribute(attr.name,attr.value);
-        });
-        this.children.forEach(child=>{
-            if(child instanceof VNode){
+    ToDom():HTMLElement|Text{
+        if(this.type=="custom"){
+            let vnode=this.instance.GetVNode();
+            let dom=vnode.ToDom();
+            this.dom=dom;
+            return dom;
+        }
+        if(this.type=="element"){
+            let elem=document.createElement(this.tag);
+            this.dom=elem;
+            this.attrs.forEach(attr=>{
+                ApplyAttr(elem,attr.name,attr.value);
+            });
+            this.children.forEach(child=>{
                 let dom=child.ToDom();
                 elem.appendChild(dom);
-                return;
-            }
-            if(typeof(child)=="string"){
-                let textnode=document.createTextNode(child);
-                elem.appendChild(textnode);
-                return;
-            }
-        });
-        if(this.mvvm)
-            this.mvvm.AttachElement(elem);
-        this.dom=elem;
-        return elem;
+            });
+            return elem;
+        }
+        if(this.type=="text"){
+            let text=document.createTextNode(this.text);
+            this.dom=text;
+            return text;
+        }
     }
-    
+    GetDom(){
+        return this.dom;
+    }
 
-    SetMvvm(obj:BaseComponent<any>){
-        this.mvvm=obj;
-    }
-    GetMvvm(){
-        return this.mvvm;
-    }
-    HasMvvmAttached(){
-        return this.mvvm!=null;
-    }
 
     Emit(event:string,...data:any[]){
         if(this.parent){
-            if(this.parent.HasMvvmAttached())
-                this.parent.GetMvvm().__Trigger(event,...data);
+            if(this.parent.type=="custom")
+                this.parent.instance.Trigger(event,...data);
             this.parent.Emit(event,...data);
         }
     }
     BroadCast(event:string,...data:any[]){
         this.children.forEach(child=>{
             if(child instanceof VNode){
-                let obj=child.GetMvvm();
-                if(obj){
-                    obj.__Trigger(event,...data);
+                if(child.type=="custom"){
+                    child.instance.Trigger(event,...data);
                 }
                 child.BroadCast(event,...data);
             }
         });
     }
 
-    SetParent(parent:VNode){
-        this.parent=parent;
-    }
-    GetChild(name:string):VNode{
-        for(let i=0;i<this.children.length;i++){
-            let child=this.children[i];
-            if(child instanceof VNode){
-                if(child.name==name)
-                    return child;
-                else{
-                    let res=child.GetChild(name);
-                    if(res)
-                        return res;
-                }
-            }
-
+    Refresh(){
+        if(this.type=="custom"){
+            this.instance.__refresh();
+            return;
         }
-        return null;
+        if(this.type=="element"){
+            this.children.forEach(child=>{
+                child.Refresh();
+            });
+            return;
+        }
+    }
+    AttachDom(dom:HTMLElement){
+        this.dom=dom;
     }
 }
