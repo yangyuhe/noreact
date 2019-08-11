@@ -1,45 +1,20 @@
 import { BaseComponent, ComponentConstructor } from "./core/BaseComponent";
 
-export function GetJSModule(module:string){
+export function GetJSModule(name:string){
         let promise:Promise<ComponentConstructor<any>>;
-        if(module=="about-page"){
-            promise=import(/*webpackChunkName:"homepage" */"./pages/About").then(module=>{
-                return module.AboutPage;
+        if(name=="todov1"){
+            promise=import(/*webpackChunkName:"todov1" */"./components/todo/todo-v1").then(module=>{
+                return module.ToDoV1;
             });
         }
-        if(module=="fact"){
-            promise=import(/*webpackChunkName:"fact" */"./components/fact/fact").then(module=>{
-                return module.MdFact;
+        if(name=="todov2"){
+            promise=import(/*webpackChunkName:"todov2" */"./components/todo/todo-v2").then(module=>{
+                return module.ToDoV2;
             });
         }
-        if(module=="team"){
-            promise=import(/*webpackChunkName:"team" */"./components/team/team").then(module=>{
-                return module.TeamModule;
-            });
-        }
-        if(module=="header"){
-            promise=import(/*webpackChunkName:"header" */"./common/header/Header").then(module=>{
-                return module.Header;
-            });
-        }
-        if(module=="card"){
-            promise=import(/*webpackChunkName:"card" */"./components/card/card-list").then(module=>{
-                return module.CardList;
-            });
-        }
-        if(module=="search"){
-            promise=import(/*webpackChunkName:"search" */"./components/search/search").then(module=>{
-                return module.SearchModule;
-            });
-        }
-        if(module=="edit"){
-            promise=import(/*webpackChunkName:"edit" */"./components/edit/edit").then(module=>{
-                return module.Edit;
-            });
-        }
-        if(module=="about-page"){
-            promise=import(/*webpackChunkName:"about-page" */"./pages/About").then(module=>{
-                return module.AboutPage;
+        if(name=="housecard"){
+            promise=import(/*webpackChunkName:"housecard" */"./components/house-card/house-card").then(module=>{
+                return module.HouseCard;
             });
         }
         if(!promise)

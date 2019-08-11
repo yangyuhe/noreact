@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "demo":"webpack-dev-server --config webpack-dev.config.js"
+    "demo": "webpack-dev-server --config webpack-dev.config.js",
+    "build":"webpack --config webpack.config.js",
+    "start":"node dist/server/start.js"
   },
   "keywords": [],
   "author": "",

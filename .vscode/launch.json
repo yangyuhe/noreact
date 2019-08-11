@@ -8,7 +8,7 @@
             "type": "node",
             "request": "launch",
             "name": "debug typescript",
-            "program": "${workspaceFolder}/dist/start.js"
+            "program": "${workspaceFolder}/dist/server/start.js"
         },
         {
             "type": "node",

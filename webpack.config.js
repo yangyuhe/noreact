@@ -2,25 +2,23 @@ const path = require("path");
 const ManifestPlugin = require('webpack-manifest-plugin');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 const webpack=require("webpack");
-const config=require("./src/app.json");
+const config=require("./app.json");
 
-let shouldClearDir=process.argv[1].indexOf("webpack-dev-server")==-1;
 let plugins=[
     new ManifestPlugin(),
     new webpack.NamedModulesPlugin(),
-    new webpack.HotModuleReplacementPlugin() 
+    new CleanWebpackPlugin(['bundle'])
 ];
-if(shouldClearDir)
-    plugins.push(new CleanWebpackPlugin(['bundle']));
 
 module.exports = {
     mode:"development",
     entry: {
-        "bootstrap": path.resolve(__dirname,"src/www/"+"bootstrap.ts")
+        "bootstrap": path.resolve(__dirname,"www/"+"bootstrap.ts")
     },
     devtool: 'source-map',
     resolve: {
-        extensions: ['.ts','.tsx','.js']
+        extensions: ['.ts','.tsx','.js'],
+        modules:[path.resolve(__dirname,'node_modules')]
     },
     
     module: {
@@ -28,24 +26,27 @@ module.exports = {
             test: /\.tsx?$/,
             use: [{
                 loader: "ts-loader",
-                options:{compilerOptions:{
-                    "module": "esnext",
-                    "target": "ES5"
-                }}
+                options:{
+                    compilerOptions:{
+                        "target": "ES5",
+                        "module": "esnext"
+                    },
+                    onlyCompileBundledFiles:true
+                }
             },{
                 loader:"stylename-loader"
-            }]
+            }],
+            include:path.resolve(__dirname,"www")
         },{
             test:/\.scss/,
-            use:[{
-                loader:"style-loader"
-            },
+            use:[
             {
                 loader:"css-loader"
             },
             {
                 loader:"sass-loader"
-            }]
+            }],
+            include:path.resolve(__dirname,"www")
         },{
             test:/\.((ttf)|(woff2)|(woff)|(eot)|(svg))$/,
             use:[{
@@ -54,7 +55,8 @@ module.exports = {
                     limit: 8192,
                     name: '[name].[ext]'
                 }
-            }]
+            }],
+            include:path.resolve(__dirname,"www")
         }]
     },
     resolveLoader:{
@@ -64,6 +66,7 @@ module.exports = {
         filename: "[name].js",
         path: path.resolve(__dirname,"bundle"),
         chunkFilename: '[name].bundle.js',
+        publicPath:"static/"
     },
     plugins: plugins,
     devServer: {

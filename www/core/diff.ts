@@ -67,6 +67,7 @@ interface SquareUnit{
 }
 interface NextState<T>{
     value:T,
+    /**当state为old类型时newValue表示新值 */
     newValue?:T,
     state:"new"|"delete"|"old"
 }
@@ -82,7 +83,7 @@ function getOpers<T>(square:SquareUnit[][],oldset:T[],newset:T[]):NextState<T>[]
         }
         let unit=square[row][column];
         if(unit.fromColumn==column-1 && unit.fromRow==row-1){
-            if(unit.value!=square[column-1][row-1].value){
+            if(unit.value!=square[row-1][column-1].value){
                 states.push({value:oldset[row-1],state:"delete"});
                 states.push({value:newset[column-1],state:"new"});
             }else{

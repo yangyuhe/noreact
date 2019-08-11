@@ -16,12 +16,13 @@ let plugins=[
 if(shouldClearDir)
     plugins.push(new CleanWebpackPlugin(['bundle']));
 
-let entries=[];
+let entries={bootstrap:path.resolve('www','bootstrap.ts')};
 let dir=path.resolve(__dirname,"demo");
 let files=fs.readdirSync(dir);
 files.forEach(file=>{
     if(file.endsWith(".ts")){
-        entries.push(path.resolve(dir,file));
+        let name=file.substr(0,file.length-3);
+        entries[name]=path.resolve(dir,file);
     }
 });
 
@@ -38,10 +39,13 @@ module.exports = {
             test: /\.tsx?$/,
             use: [{
                 loader: "ts-loader",
-                options:{compilerOptions:{
-                    "module": "esnext",
-                    "target": "ES5"
-                }}
+                options:{
+                    compilerOptions:{
+                        "module": "esnext",
+                        "target": "ES5"
+                    },
+                    onlyCompileBundledFiles:true
+                }
             },{
                 loader:"stylename-loader"
             }]
@@ -74,6 +78,7 @@ module.exports = {
         filename: "[name].js",
         path: path.resolve(__dirname,"bundle"),
         chunkFilename: '[name].bundle.js',
+        publicPath:"http://localhost:8004/"
     },
     plugins: plugins,
     devServer: {

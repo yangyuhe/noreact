@@ -4,22 +4,9 @@ import { VNODE_ID } from "./attribute";
 
 class React{
     private counter=0;
+    private mode:"deep"|"shallow"="deep";
     ResetCounter(){
         this.counter=0;
-    }
-    private addToChild(child:VNode|any,index:string,children:VNode[]){
-        if(child instanceof VNode){
-            child.AddAttr("key",index);
-            children.push(child);
-            return;
-        }else{
-            let vnode=new VNode("text");
-            vnode.AddAttr("key",index);
-            let json=child+"";
-            vnode.SetText(json);
-            children.push(vnode);
-            return;
-        }
     }
     createElement(Elem:string|ComponentConstructor<any>,attrs:{[key:string]:any},...children:(VNode|VNode[]|string)[]) :VNode{
         let allchildren:VNode[]=[];
@@ -28,46 +15,72 @@ class React{
                 child.forEach((c,subindex)=>{
                     let key=c.GetAttr("key");
                     if(key!=null)
-                        this.addToChild(c,index+"-"+key,allchildren);
-                    else
-                        this.addToChild(c,index+"-"+subindex,allchildren);
+                        allchildren.push(c);
+                    else{
+                        c.SetAttr("key",index+"-"+subindex);
+                        allchildren.push(c);
+                    }
                 });
-            }else{
-                this.addToChild(child,index+"",allchildren);
+                return;
             }
+            if(child instanceof VNode){
+                child.SetAttr("key",index);
+                allchildren.push(child);
+                return;
+            }
+            
+            let textnode=new VNode("text");
+            textnode.SetText(child+"");
+            textnode.SetAttr("key",index);
+            allchildren.push(textnode);
         });
         
         
         if(typeof Elem=="string"){
             let vnode:VNode=new VNode("element");
             vnode.SetTag(Elem);
-            vnode.AddAttr(VNODE_ID,this.counter);
+            vnode.SetAttr(VNODE_ID,this.counter);
             this.counter++;
+            
             if(attrs!=null){
                 for(let key in attrs){
-                    vnode.AddAttr(key,attrs[key]);
+                    if(toString.call(attrs[key])=="[object Object]" && key=="style"){
+                        vnode.SetAttr("style",JSON.parse(JSON.stringify(attrs[key])));
+                    }else{
+                        vnode.SetAttr(key,attrs[key]);
+                    }
                 }
             }
             allchildren.forEach(child=>{
-                vnode.PushChild(child);
+                vnode.AppendVChild(child);
             });
             return vnode;
         }
         else{
-            let mvvm=new Elem(attrs);
-            mvvm.SetChildren(allchildren);
             let vnode=new VNode("custom");
+            vnode.SetAttr(VNODE_ID,this.counter);
+            this.counter++;
+            
+            let mvvm=new Elem(attrs);
+            vnode.SetInstance(mvvm);
+            mvvm.$SetChildren(allchildren);
+            if(this.mode=="deep"){
+                let child=mvvm.$Render();
+                vnode.AppendVChild(child);
+            }
+
             if(attrs!=null){
                 for(let key in attrs){
-                    vnode.AddAttr(key,attrs[key]);
+                    vnode.SetAttr(key,attrs[key]);
                 }
             }
-            vnode.SetInstance(mvvm);
-            mvvm.SetVNode(vnode);
+            
             return vnode;
         }
     }
-    
+    ChangeMode(mode:"shallow"|"deep"){
+        this.mode=mode;
+    }
 }
 export default new React();
 

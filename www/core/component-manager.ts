@@ -6,14 +6,14 @@ let componentSet:{[key:string]:ComponentConstructor<any>}={};
  * 给一个组件起个名字，这个装饰器不是必须的，当该组件参与动态构建见面时才是必须的
  * @param name 
  */
-export function Component(name:string){
+export function Component(info:{name:string,style?:string}){
     return function(component:any){
-        if(componentSet[name]){
+        if(componentSet[info.name]){
             throw new Error("component name ["+name+"] duplicated");
         }
-        componentSet[name]=component;
+        componentSet[info.name]=component;
         return <any>class extends component{
-            Name:string=name;
+            $Name:string=info.name;
         };
     };
 }

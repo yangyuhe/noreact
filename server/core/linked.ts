@@ -37,9 +37,8 @@ class Procedure{
     SetNext(procedure:Procedure){
         if(this.handler instanceof Linked){
             this.handler.$SetOtherwise(procedure);
-            this.next=procedure;
-        }else
-            this.next=procedure;
+        }
+        this.next=procedure;
     }
     private match(req:IncomingMessage,res:ServerResponse){
         let absolutePath=this.$GetContextPath();
@@ -68,36 +67,36 @@ class Procedure{
     }
 }
 export class Linked{
-    private firstHandler:Procedure;
-    private lastHandler:Procedure;
+    private firstProcedure:Procedure;
+    private lastProcedure:Procedure;
     private attachedProcedure:Procedure;
     private pathname:string;
     private otherwise:Procedure;
     
     Startup(req:IncomingMessage,res:ServerResponse){
-        if(!this.firstHandler){
+        if(!this.firstProcedure){
             this.OtherWise(req,res);
             return;
         }
         this.pathname=url.parse(req.url).pathname;
-        this.firstHandler.Do(req,res);
+        this.firstProcedure.Do(req,res);
     }
     private $mount(path:string,method:HttpMethod,handler:Middleware|Linked,fully:boolean=false){
         let procedure=new Procedure(path,method,handler,fully,this);
         if(handler instanceof Linked){
             handler.$SetAttachedProcedure(procedure);
         }
-        if(!this.firstHandler){
-            this.firstHandler=procedure;
-            this.lastHandler=procedure;
+        if(!this.firstProcedure){
+            this.firstProcedure=procedure;
+            this.lastProcedure=procedure;
         }else{
-            this.lastHandler.SetNext(procedure);
-            this.lastHandler=procedure;
+            this.lastProcedure.SetNext(procedure);
+            this.lastProcedure=procedure;
         }
         return this;
     }
     
-    Use(middleware:Middleware|Linked,fully?:boolean):Linked;
+    Use(middleware:Middleware|Linked):Linked;
     Use(path:string,middleware:Middleware|Linked,fully?:boolean):Linked;
     Use(path:string,method:HttpMethod,handler:Middleware|Linked,fully?:boolean):Linked;
     Use(){
@@ -107,8 +106,7 @@ export class Linked{
         let fourth=arguments[3];
         
         if((typeof(first)=="function"||first instanceof Linked)){
-            second=!!second;
-            this.$mount("","ALL",first,second);
+            this.$mount("","ALL",first,false);
         }
         if(typeof(first)=="string" && (typeof(second)=="function"||second instanceof Linked)){
             third=!!third;
@@ -141,7 +139,7 @@ export class Linked{
         return this;
     }
     $GetLastHandler(){
-        return this.lastHandler;
+        return this.lastProcedure;
     }
     
     $SetAttachedProcedure(procedure:Procedure){

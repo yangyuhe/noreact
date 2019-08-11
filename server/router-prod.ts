@@ -1,7 +1,6 @@
 import { ComponentFactory } from "../www/core/component-manager";
 import { Linked } from "./core/linked";
-import { Save } from "./router-save";
-import { AboutPage } from "../www/pages/About";
+import "../www/components/house-card/house-card"
 
 export let proLinked=new Linked();
 proLinked.Post("/custom",(req,res)=>{
@@ -24,7 +23,6 @@ proLinked.Post("/custom",(req,res)=>{
             </head>
             <body>
             `;
-            let suffix=[];
             for(let i=0;i<modules.length;i++){
                 let module=modules[i];
                 if(!module.name){
@@ -37,17 +35,16 @@ proLinked.Post("/custom",(req,res)=>{
                 }
                 let instance=ComponentFactory(module.name,module.data);
                 if(instance){
-                    let tree=instance.GetVNode();
-                    html+=tree.ToHtml();
-                    suffix.push({name:module.name,data:module.data});
+                    let str=instance.$ToHtml();
+                    html+=str;
                 }else{
                     throw new Error(`[${module.name}]模块找不到`);
                 }
             }
             html+=`\n<script>
-                var $noreact_roots=${JSON.stringify(suffix)};
+                var $noreact_roots=${data};
             </script>
-            <script src="http://localhost:8003/bootstrap.js"></script>
+            <script src="http://localhost:8004/bootstrap.js"></script>
             </body>
             </html>`;
             res.html(html);
@@ -57,22 +54,3 @@ proLinked.Post("/custom",(req,res)=>{
         }
     });
 });
-proLinked.Post("/about-page",(req,res)=>{
-    let data="";
-    req.setEncoding("utf8");
-    req.on("data",chunk=>{
-        data+=chunk;
-    });
-    req.on("end",()=>{
-        try{
-            let module=JSON.parse(data);
-            let about=new AboutPage(module);
-            let tree=about.GetVNode();
-            res.html(tree.ToHtml());
-        }catch(err){
-            res.json({message:err.message,stack:err.stack});
-            
-        }
-    });
-})
-proLinked.Post("/save",Save);
