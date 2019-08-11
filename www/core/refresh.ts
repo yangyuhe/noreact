@@ -4,10 +4,20 @@ let queue:BaseComponent<any>[]=[];
 
 let promise:Promise<void>;
 export function PreRefresh(mvvm:BaseComponent<any>){
-    if(queue.indexOf(mvvm)==-1){
+    if(queue.indexOf(mvvm)!=-1){
+        return;
+    }
+    queue=queue.filter(q=>{
+        return !q.$HasParent(mvvm);
+    });
+    let parentAlreadyIn=queue.some(q=>{
+        return mvvm.$HasParent(q);
+    });
+    if(!parentAlreadyIn){
         queue.push(mvvm);
     }
-    if(!promise){
+
+    if(!promise && queue.length>0){
         promise=new Promise((resolve,reject)=>{
             resolve();
         }).then(()=>{
@@ -18,21 +28,7 @@ export function PreRefresh(mvvm:BaseComponent<any>){
     }
 }
 function Refresh(){
-    let roots:BaseComponent<any>[]=[];
-    queue.forEach(item=>{
-        let vnode=item.$GetRoot();
-        
-        while(vnode.GetParent()){
-            vnode=vnode.GetParent();
-            if(vnode.GetInstance()){
-                item=vnode.GetInstance();
-            }
-        }
-        if(roots.indexOf(item)==-1){
-            roots.push(item);
-        }
-    });
-    roots.forEach(root=>{
+    queue.forEach(root=>{
         root.$ApplyRefresh();
     });
 }

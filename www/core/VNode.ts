@@ -15,11 +15,13 @@ export class VNode {
     /**关联的组件实例，当type='custom'有效 */
     private instance: BaseComponent<any>;
     /**关联的实际dom元素 */
-    private dom: HTMLElement | Text;
+    private dom: (HTMLElement | Text);
     /**节点类型 */
     private type: "element" | "text" | "custom";
     /**当时type='text'时这个值才有意义，表示text的内容 */
     private text: string = "";
+    /**是否已经被销毁 */
+    private isDestroyed=false;
 
 
     constructor(type: "element" | "text" | "custom") {
@@ -48,17 +50,50 @@ export class VNode {
     }
     /**在索引为index位置增加一个child,index=-1表示在末尾添加，注意会引发实际的dom操作 */
     InsertChild(child: VNode, index: number) {
+        //dom操作
+        let doms = child.ToDom();
+        let sibling:(HTMLElement|Text)=null;
+        while(this.children[index]){
+            let subdoms=this.children[index].getClosestBottomDom();
+            if(subdoms.length>0){
+                sibling=subdoms[0];
+                break;
+            }else{
+                index++;
+            }
+        }
+        if(sibling){
+            doms.forEach(dom=>{
+                sibling.parentNode.insertBefore(dom,sibling);
+            });
+        }else{
+            let top=this.getClosestTopDom();
+            doms.forEach(dom=>{
+                top.appendChild(dom);
+            });
+        }
+        //虚拟dom操作
+        this.children.splice(index,0,child);
         child.parent = this;
-        let dom = child.ToDom();
-        if (index == -1) {
-            this.children.push(child);
-            this.dom.appendChild(dom);
-        }
-        else {
-            this.children.splice(index, 0, child);
-            this.dom.insertBefore(dom, this.dom.childNodes[index]);
-        }
+        
         child.Rendered();
+    }
+    private getClosestTopDom():(HTMLElement|Text){
+        if(this.dom)
+            return this.dom;
+        else
+            return this.parent.getClosestTopDom();
+    }
+    private getClosestBottomDom():(HTMLElement|Text)[]{
+        if(this.dom)
+            return [this.dom];
+        else{
+            let children=[];
+            this.children.forEach(child=>{
+                children=children.concat(child.getClosestBottomDom());
+            });
+            return children;
+        }
     }
     /**末尾添加一个孩子节点，不包含dom操作 */
     AppendVChild(child: VNode) {
@@ -67,9 +102,22 @@ export class VNode {
     }
     /**移除一个孩子节点，注意会引发dom操作 */
     RemoveVChild(child: VNode) {
+        child.Destroy();
         let index = this.children.indexOf(child);
         this.children.splice(index, 1);
-        this.dom.removeChild(child.dom);
+        let doms=child.getClosestBottomDom();
+        doms.forEach(dom=>{
+            dom.parentNode.removeChild(dom);
+        });
+    }
+    Destroy(){
+        this.isDestroyed=true;
+        if(this.instance){
+            this.instance.$Destroyed();
+        }
+        this.children.forEach(child=>{
+            child.Destroy();
+        });
     }
     GetChildren() {
         return this.children;
@@ -183,51 +231,57 @@ export class VNode {
         if (this.type == "element") {
             let innerhtmls: string[] = [];
 
-            innerhtmls.push(`<${this.tag} `);
-
-            this.attrs.forEach(attr => {
-                let attrStr = SerializeAttr(attr.name, attr.value);
-                if (attrStr)
-                    innerhtmls.push(attrStr + " ");
-            });
-            innerhtmls.push(">");
+            if(this.tag!="fragment"){
+                innerhtmls.push(`<${this.tag} `);
+                this.attrs.forEach(attr => {
+                    let attrStr = SerializeAttr(attr.name, attr.value);
+                    if (attrStr)
+                        innerhtmls.push(attrStr + " ");
+                });
+                innerhtmls.push(">");
+            }
+            
             this.children.forEach(child => {
                 let res = child.ToHtml();
                 innerhtmls.push(res);
             });
-            innerhtmls.push(`</${this.tag}>`);
+            if(this.tag!="fragment")
+                innerhtmls.push(`</${this.tag}>`);
             return innerhtmls.join("");
         }
     }
-    ToDom(): HTMLElement | Text {
+    ToDom(): (HTMLElement | Text)[] {
         if (this.type == "custom") {
-            let dom = this.instance.$ToDom();
-            this.dom = dom;
-            return dom;
+            let doms = this.instance.$ToDom();
+            return doms;
         }
         if (this.type == "element") {
-            let elem = document.createElement(this.tag);
-            this.dom = elem;
-            this.attrs.forEach(attr => {
-                ApplyAttr(elem, attr.name, attr.value);
-            });
-            this.children.forEach(child => {
-                let dom = child.ToDom();
-                elem.appendChild(dom);
-            });
-            return elem;
+            if(this.tag!="fragment"){
+                let elem = document.createElement(this.tag);
+                this.dom = elem;
+                this.attrs.forEach(attr => {
+                    ApplyAttr(elem, attr.name, attr.value);
+                });
+                this.children.forEach(child => {
+                    let doms = child.ToDom();
+                    doms.forEach(dom=>elem.appendChild(dom));
+                });
+                return [elem];
+            }else{
+                let children:(HTMLElement|Text)[]=[];
+                this.children.forEach(child => {
+                    let doms = child.ToDom();
+                    children=children.concat(doms);
+                });
+                return children;
+            }
         }
         if (this.type == "text") {
             let text = document.createTextNode(this.text);
             this.dom = text;
-            return text;
+            return [text];
         }
     }
-    GetDom() {
-        return this.dom;
-    }
-
-
     Emit(event: string, ...data: any[]) {
         if (this.parent) {
             if (this.parent.type == "custom")
@@ -246,22 +300,10 @@ export class VNode {
         });
     }
 
-    ApplyRefresh() {
-        if (this.type == "custom") {
-            this.instance.$ApplyRefresh();
-            return;
-        }
-        if (this.type == "element") {
-            this.children.forEach(child => {
-                child.ApplyRefresh();
-            });
-            return;
-        }
-    }
     AttachDom(dom: HTMLElement | Text) {
         this.dom = dom;
         this.attrs.forEach(attr => {
-            AttachEventListener(<HTMLElement>this.dom, attr.name, attr.value);
+            AttachEventListener(<HTMLElement>dom, attr.name, attr.value);
         });
     }
     ClearChildren() {

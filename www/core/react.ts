@@ -1,7 +1,8 @@
 import { VNode } from "./VNode";
-import { ComponentConstructor } from "./BaseComponent";
+import { ComponentConstructor, BaseComponent } from "./BaseComponent";
 import { VNODE_ID } from "./attribute";
 
+const isInBrowser=new Function("try {return this===window;}catch(e){ return false;}");
 class React{
     private counter=0;
     private mode:"deep"|"shallow"="deep";
@@ -35,12 +36,13 @@ class React{
             allchildren.push(textnode);
         });
         
-        
         if(typeof Elem=="string"){
             let vnode:VNode=new VNode("element");
             vnode.SetTag(Elem);
-            vnode.SetAttr(VNODE_ID,this.counter);
-            this.counter++;
+            if(!isInBrowser()){
+                vnode.SetAttr(VNODE_ID,this.counter);
+                this.counter++;
+            }
             
             if(attrs!=null){
                 for(let key in attrs){
@@ -58,12 +60,15 @@ class React{
         }
         else{
             let vnode=new VNode("custom");
-            vnode.SetAttr(VNODE_ID,this.counter);
-            this.counter++;
+            if(!isInBrowser()){
+                vnode.SetAttr(VNODE_ID,this.counter);
+                this.counter++;
+            }
             
             let mvvm=new Elem(attrs);
             vnode.SetInstance(mvvm);
             mvvm.$SetChildren(allchildren);
+            mvvm.$AttachVNode(vnode);
             if(this.mode=="deep"){
                 let child=mvvm.$Render();
                 vnode.AppendVChild(child);
