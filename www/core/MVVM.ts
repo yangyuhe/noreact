@@ -3,7 +3,7 @@ import { RegisterEvent, TriggerEvent } from "./event-center";
 import { VNode } from "./VNode";
 import React from "./react";
 import { PreRefresh } from "./refresh";
-export abstract class BaseComponent<T>{
+export abstract class MVVM<T>{
     private $root:VNode;
     private $attachedVNode:VNode;
     /**组件内部的事件注册中心 */
@@ -20,7 +20,7 @@ export abstract class BaseComponent<T>{
     /**渲染完成后该方法会被调用，此时elem成员变量才可以被访问到 */
     protected $onRendered():void{}
     /**该组建的渲染方法，该方法必须返回一个虚拟树 */
-    protected abstract $Template():VNode;
+    protected abstract Render():VNode;
     private $isdirty=false;
     /**向所有父级发送消息 */
     protected $emit<Message>(event:string,data:Message){
@@ -31,7 +31,7 @@ export abstract class BaseComponent<T>{
         this.$root.BroadCast(event,this,data);
     }
     /**监听事件 */
-    protected $on<Message>(event:string,callback:(target:BaseComponent<any>,data:Message)=>void){
+    protected $on<Message>(event:string,callback:(target:MVVM<any>,data:Message)=>void){
         if(!this.$eventRegister[event])
             this.$eventRegister[event]=[];
         this.$eventRegister[event].push(callback);
@@ -50,17 +50,17 @@ export abstract class BaseComponent<T>{
     }
     $ToDom():(HTMLElement|Text)[]{
         if(!this.$root)
-            this.$Render();
+            this.$DoRender();
         return this.$root.ToDom();
     }
     $ToHtml():string{
         if(!this.$root)
-            this.$Render();
+            this.$DoRender();
         return this.$root.ToHtml();
     }
     $GetRoot(){
         if(!this.$root)
-            this.$Render();
+            this.$DoRender();
         return this.$root;
     }
     
@@ -83,18 +83,18 @@ export abstract class BaseComponent<T>{
     $ApplyRefresh(){
         if(this.$isdirty){
             React.ChangeMode("shallow");
-            let newroot=this.$Template();
+            let newroot=this.Render();
             React.ChangeMode("deep");
             this.$diff([this.$root],[newroot],this.$root.GetParent());
             this.$isdirty=false;
         }
     }
-    $Render(){
-        this.$root=this.$Template();
+    $DoRender(){
+        this.$root=this.Render();
         return this.$root;
     }
     private $diff(olds:VNode[],news:VNode[],parent:VNode){
-        let opers=Diff(olds,news,BaseComponent.$compareVNode);
+        let opers=Diff(olds,news,MVVM.$compareVNode);
         opers.reverse();
         let index=0;
         opers.forEach(oper=>{
@@ -106,7 +106,7 @@ export abstract class BaseComponent<T>{
                     instance.$ApplyRefresh();
                     return;
                 }
-                if(oper.value.GetType()=="element"){
+                if(oper.value.GetType()=="standard"){
                     oper.value.ApplyAttrDiff(oper.newValue.GetAttrs());
                     this.$diff(oper.value.GetChildren(),oper.newValue.GetChildren(),oper.value);
                     return;
@@ -118,26 +118,25 @@ export abstract class BaseComponent<T>{
             }
             if(oper.state=="new"){
                 if(oper.value.GetType()=="custom"){
-                    let vnode=oper.value.GetInstance().$Render();
-                    oper.value.AppendVChild(vnode);
-                    parent.InsertChild(oper.value,index);
+                    oper.value.GetInstance().$DoRender();
+                    parent.InsertVNode(oper.value,index);
                 }else{
-                    parent.InsertChild(oper.value,index);
+                    parent.InsertVNode(oper.value,index);
                 }
                 index++;
                 return;
             }
             if(oper.state=="delete"){
-                parent.RemoveVChild(oper.value);
+                parent.RemoveVNode(oper.value);
                 return;
             }
         });
     }
-    $Rendered(){
+    onRendered(){
         this.$onRendered();
         this.$root.Rendered();
     }
-    $Destroyed(){
+    onDestroyed(){
 
     }
     $AttachVNode(vnode:VNode){
@@ -146,7 +145,7 @@ export abstract class BaseComponent<T>{
     $GetAttachedVNode(){
         return this.$attachedVNode;
     }
-    $HasParent(mvvm:BaseComponent<any>){
+    $HasParent(mvvm:MVVM<any>){
         if(!mvvm)
             return false;
         let vnode=this.$attachedVNode;
@@ -170,7 +169,7 @@ export abstract class BaseComponent<T>{
                 return false;
             }
         }
-        if(left.GetType()=="element"){
+        if(left.GetType()=="standard"){
             if(left.GetTag()!=rigth.GetTag())
                 return false;
         }
@@ -181,6 +180,6 @@ export abstract class BaseComponent<T>{
         return true;
     }
 }
-export interface ComponentConstructor<T>{
-    new (params:T):BaseComponent<T>;
+export interface MVVMConstructor<T>{
+    new (params:T):MVVM<T>;
 }

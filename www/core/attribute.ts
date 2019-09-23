@@ -59,24 +59,13 @@ export function SerializeAttr(name:string,value:any):string{
 }
 /**toDom方法使用 */
 export function ApplyAttr(elem:HTMLElement, name:string,value:any){
-    let isevent=AttachEventListener(elem,name,value);
-    if(!isevent){
-        if(applyAttr[name]){
-            applyAttr[name](elem,value);
-        }else{
-            elem.setAttribute(name,value);
-        }
+    if(applyAttr[name]){
+        applyAttr[name](elem,value);
+    }else{
+        elem.setAttribute(name,value);
     }
 }
 
-export function AttachEventListener(elem:HTMLElement, name:string,value:any){
-    let event=GetEventAttrName(name);
-    if(event){
-        elem.addEventListener(event,value);
-        return true;
-    }
-    return false;
-}
 export function GetEventAttrName(attr:string){
     if(/^on([A-Z][a-z]+)+$/.test(attr)){
         return attr.slice(2).toLowerCase();

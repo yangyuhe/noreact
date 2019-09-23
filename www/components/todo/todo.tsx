@@ -1,6 +1,6 @@
 //这是组件的逻辑层
-import { BaseComponent } from "../../core/BaseComponent";
-export abstract class ToDo extends BaseComponent<{todos:{text:string,id:number}[]}>{
+import { MVVM } from "../../core/MVVM";
+export abstract class ToDo extends MVVM<{todos:{text:string,id:number}[]}>{
     private counter=0;
     protected todos:{text:string,id:number}[]=this.$params.todos;
     add(text:string){

@@ -1,6 +1,6 @@
-import { ComponentConstructor } from "./BaseComponent";
+import { MVVMConstructor } from "./MVVM";
 
-let componentSet:{[key:string]:ComponentConstructor<any>}={};
+let componentSet:{[key:string]:MVVMConstructor<any>}={};
 
 /**
  * 给一个组件起个名字，这个装饰器不是必须的，当该组件参与动态构建见面时才是必须的
@@ -39,7 +39,7 @@ export function ComponentExist(name:string):boolean{
 /**
  * 获取组件名
  */
-export function ComponentName(cons:ComponentConstructor<any>):string{
+export function ComponentName(cons:MVVMConstructor<any>):string{
     for(let key in componentSet){
         if(componentSet[key]==cons){
             return key;

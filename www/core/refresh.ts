@@ -1,9 +1,9 @@
-import { BaseComponent } from "./BaseComponent";
+import { MVVM } from "./MVVM";
 
-let queue:BaseComponent<any>[]=[];
+let queue:MVVM<any>[]=[];
 
 let promise:Promise<void>;
-export function PreRefresh(mvvm:BaseComponent<any>){
+export function PreRefresh(mvvm:MVVM<any>){
     if(queue.indexOf(mvvm)!=-1){
         return;
     }

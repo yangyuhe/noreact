@@ -1,4 +1,4 @@
-import { BaseComponent } from "./core/BaseComponent";
+import { MVVM } from "./core/MVVM";
 import { VNODE_ID } from "./core/attribute";
 import { VNode } from "./core/VNode";
 import { GetJSModule } from "./dynamic-require";
@@ -10,7 +10,7 @@ if($noreact_roots){
         let promise=GetJSModule(root.name);
         if(promise){
             promise.then(module=>{
-                let component:BaseComponent<any>=new module(root.data);
+                let component:MVVM<any>=new module(root.data);
                 let tree=component.$GetRoot();
                 let nodeId=tree.GetAttr(VNODE_ID);
                 let selector=`[${VNODE_ID}='${nodeId}']`;
@@ -44,7 +44,7 @@ function RestoreVNode(vnode:VNode,elem:HTMLElement){
         }
     });
     childrenVnodes.forEach(child=>{
-        if(child.GetType()=="element"){
+        if(child.GetType()=="standard"){
             let id=child.GetAttr(VNODE_ID);
             let dom=domHash[id];
             if(dom){

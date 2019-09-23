@@ -1,10 +1,11 @@
-import { ApplyAttr, AttachEventListener, SerializeAttr, GetEventAttrName } from "./attribute";
-import { BaseComponent } from "./BaseComponent";
+import { ApplyAttr, SerializeAttr, GetEventAttrName } from "./attribute";
+import { MVVM } from "./MVVM";
 import { Diff } from "./diff";
 
 export class VNode {
     /**虚拟节点名称，即标准html的标签名 */
     protected tag: string = "";
+    private text:string="";
     /**子节点 */
     protected children: VNode[] = [];
     /**属性集合 */
@@ -13,18 +14,16 @@ export class VNode {
     private parent: VNode = null;
 
     /**关联的组件实例，当type='custom'有效 */
-    private instance: BaseComponent<any>;
+    private instance: MVVM<any>;
     /**关联的实际dom元素 */
     private dom: (HTMLElement | Text);
     /**节点类型 */
-    private type: "element" | "text" | "custom";
-    /**当时type='text'时这个值才有意义，表示text的内容 */
-    private text: string = "";
+    private type: "standard" | "custom" | "text";
     /**是否已经被销毁 */
     private isDestroyed=false;
 
 
-    constructor(type: "element" | "text" | "custom") {
+    constructor(type: "standard" | "custom" |"text") {
         this.type = type;
     }
     SetTag(tag: string) {
@@ -33,13 +32,13 @@ export class VNode {
     GetTag() {
         return this.tag;
     }
-    SetText(text: string) {
-        this.text = text;
-    }
-    GetText() {
+    GetText(){
         return this.text;
     }
-    SetInstance(component: BaseComponent<any>) {
+    SetText(text:string){
+        this.text=text;
+    }
+    SetInstance(component: MVVM<any>) {
         this.instance = component;
     }
     GetInstance() {
@@ -49,12 +48,12 @@ export class VNode {
         return this.parent;
     }
     /**在索引为index位置增加一个child,index=-1表示在末尾添加，注意会引发实际的dom操作 */
-    InsertChild(child: VNode, index: number) {
+    InsertVNode(child: VNode, index: number) {
         //dom操作
         let doms = child.ToDom();
         let sibling:(HTMLElement|Text)=null;
         while(this.children[index]){
-            let subdoms=this.children[index].getClosestBottomDom();
+            let subdoms=this.children[index].ToDom();
             if(subdoms.length>0){
                 sibling=subdoms[0];
                 break;
@@ -67,7 +66,7 @@ export class VNode {
                 sibling.parentNode.insertBefore(dom,sibling);
             });
         }else{
-            let top=this.getClosestTopDom();
+            let top=this.getDomUpward();
             doms.forEach(dom=>{
                 top.appendChild(dom);
             });
@@ -78,34 +77,30 @@ export class VNode {
         
         child.Rendered();
     }
-    private getClosestTopDom():(HTMLElement|Text){
-        if(this.dom)
-            return this.dom;
-        else
-            return this.parent.getClosestTopDom();
-    }
-    private getClosestBottomDom():(HTMLElement|Text)[]{
-        if(this.dom)
-            return [this.dom];
-        else{
-            let children=[];
-            this.children.forEach(child=>{
-                children=children.concat(child.getClosestBottomDom());
-            });
-            return children;
+    private getDomUpward():HTMLElement|Text{
+        if(this.type=='standard'){
+            if(this.tag=="fragment"){
+                return this.parent.getDomUpward();
+            }else{
+                return this.ToDom()[0];
+            }
         }
+        if(this.type=="custom"){
+            return this.parent.getDomUpward();
+        }
+        throw new Error('getDomUpward error');
     }
     /**末尾添加一个孩子节点，不包含dom操作 */
-    AppendVChild(child: VNode) {
+    AppendChild(child: VNode) {
         child.parent = this;
         this.children.push(child);
     }
     /**移除一个孩子节点，注意会引发dom操作 */
-    RemoveVChild(child: VNode) {
+    RemoveVNode(child: VNode) {
         child.Destroy();
         let index = this.children.indexOf(child);
         this.children.splice(index, 1);
-        let doms=child.getClosestBottomDom();
+        let doms=child.ToDom();
         doms.forEach(dom=>{
             dom.parentNode.removeChild(dom);
         });
@@ -113,7 +108,7 @@ export class VNode {
     Destroy(){
         this.isDestroyed=true;
         if(this.instance){
-            this.instance.$Destroyed();
+            this.instance.onDestroyed();
         }
         this.children.forEach(child=>{
             child.Destroy();
@@ -125,8 +120,8 @@ export class VNode {
     /**渲染完毕后的回调 */
     Rendered() {
         if (this.type == "custom")
-            this.instance.$Rendered();
-        if (this.type == "element") {
+            this.instance.onRendered();
+        if (this.type == "standard") {
             this.children.forEach(child => {
                 child.Rendered();
             });
@@ -164,17 +159,32 @@ export class VNode {
     ApplyAttrDiff(newAttrs: { name: string, value: any }[]) {
         let res = Diff<{ name: string, value: any }>(this.attrs, newAttrs, VNode.compairAttr);
         res.forEach(item => {
+            let eventName = GetEventAttrName(item.value.name);
+            let isEvent=eventName!=null;
             if (item.state == "delete") {
-                let event = GetEventAttrName(item.value.name);
-                if (event) {
-                    (this.dom as HTMLElement).removeEventListener(event, item.value.value);
+                if (isEvent) {
+                    (this.dom as HTMLElement).removeEventListener(eventName, item.value.value);
                 } else {
                     (this.dom as HTMLElement).removeAttribute(item.value.name);
                 }
                 return;
             }
             if (item.state == "new") {
-                ApplyAttr(<HTMLElement>this.dom, item.value.name, item.value.value);
+                if(isEvent){
+                    (this.dom as HTMLElement).addEventListener(eventName,item.value.value);
+                }else{
+                    ApplyAttr(<HTMLElement>this.dom, item.value.name, item.value.value);
+                }
+                return;
+            }
+            if(item.state=="replace"){
+                if (isEvent) {
+                    (this.dom as HTMLElement).removeEventListener(eventName, item.value.value);
+                    (this.dom as HTMLElement).addEventListener(eventName,item.newValue.value);
+                } else {
+                    (this.dom as HTMLElement).removeAttribute(item.value.name);
+                    ApplyAttr(<HTMLElement>this.dom, item.value.name, item.newValue.value);
+                }
                 return;
             }
             if (item.state == "old") {
@@ -199,11 +209,10 @@ export class VNode {
                     }
                     return;
                 }
-                let event = GetEventAttrName(item.value.name);
-                if (event) {
+                if (isEvent) {
                     if (item.value.value != item.newValue.value) {
-                        this.dom.removeEventListener(event, item.value.value);
-                        this.dom.addEventListener(event, item.newValue.value);
+                        this.dom.removeEventListener(eventName, item.value.value);
+                        this.dom.addEventListener(eventName, item.newValue.value);
                     }
                 } else {
                     if (item.value.value != item.newValue.value) {
@@ -228,15 +237,15 @@ export class VNode {
             let html = this.instance.$ToHtml();
             return html;
         }
-        if (this.type == "element") {
+        if (this.type == "standard") {
             let innerhtmls: string[] = [];
 
             if(this.tag!="fragment"){
-                innerhtmls.push(`<${this.tag} `);
+                innerhtmls.push(`<${this.tag}`);
                 this.attrs.forEach(attr => {
                     let attrStr = SerializeAttr(attr.name, attr.value);
                     if (attrStr)
-                        innerhtmls.push(attrStr + " ");
+                        innerhtmls.push(" "+attrStr);
                 });
                 innerhtmls.push(">");
             }
@@ -255,12 +264,18 @@ export class VNode {
             let doms = this.instance.$ToDom();
             return doms;
         }
-        if (this.type == "element") {
+        if (this.type == "standard") {
             if(this.tag!="fragment"){
+                if(this.dom)
+                    return [this.dom];
                 let elem = document.createElement(this.tag);
                 this.dom = elem;
                 this.attrs.forEach(attr => {
-                    ApplyAttr(elem, attr.name, attr.value);
+                    let eventName=GetEventAttrName(attr.name);
+                    if(eventName){
+                        elem.addEventListener(eventName,attr.value);
+                    }else
+                        ApplyAttr(elem, attr.name, attr.value);
                 });
                 this.children.forEach(child => {
                     let doms = child.ToDom();
@@ -277,6 +292,8 @@ export class VNode {
             }
         }
         if (this.type == "text") {
+            if(this.dom)
+                return [this.dom];
             let text = document.createTextNode(this.text);
             this.dom = text;
             return [text];
@@ -291,23 +308,21 @@ export class VNode {
     }
     BroadCast(event: string, ...data: any[]) {
         this.children.forEach(child => {
-            if (child instanceof VNode) {
-                if (child.type == "custom") {
-                    child.instance.$Trigger(event, ...data);
-                }
-                child.BroadCast(event, ...data);
+            if (child.type == "custom") {
+                child.instance.$Trigger(event, ...data);
             }
+            child.BroadCast(event, ...data);
         });
     }
 
     AttachDom(dom: HTMLElement | Text) {
         this.dom = dom;
         this.attrs.forEach(attr => {
-            AttachEventListener(<HTMLElement>dom, attr.name, attr.value);
+            let eventName=GetEventAttrName(attr.name);
+            if(eventName){
+                dom.addEventListener(eventName,attr.value);
+            }
         });
-    }
-    ClearChildren() {
-        this.children = [];
     }
     Dirty() {
         if (this.type == "custom") {

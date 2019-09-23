@@ -1,9 +1,9 @@
-import { BaseComponent } from "../../core/BaseComponent";
+import { MVVM } from "../../core/MVVM";
 import { VNode } from "../../core/VNode";
 import React from "../../core/react";
 
 /**@import "./todo-item.scss" */
-export class TodoItem extends BaseComponent<TodoItemParams>{
+export class TodoItem extends MVVM<TodoItemParams>{
     private index:number=-1;
     private style={
         'backgroundColor':'red'
@@ -15,7 +15,7 @@ export class TodoItem extends BaseComponent<TodoItemParams>{
     private remove(){
         this.$params.onRemove(this.$params.index);
     }
-    $Template(): VNode {
+    Render(): VNode {
         return <div style={this.style} className="todo-item">
             <span className="index">{this.index+1}:</span>
             <span className="content">{this.$params.text}</span>

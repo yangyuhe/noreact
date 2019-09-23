@@ -16,7 +16,8 @@ let plugins=[
 if(shouldClearDir)
     plugins.push(new CleanWebpackPlugin(['bundle']));
 
-let entries={bootstrap:path.resolve('www','bootstrap.ts')};
+// let entries={bootstrap:path.resolve('www','bootstrap.ts')};
+let entries={};
 let dir=path.resolve(__dirname,"demo");
 let files=fs.readdirSync(dir);
 files.forEach(file=>{

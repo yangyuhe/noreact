@@ -44,18 +44,19 @@ function findShortest<T>(square:SquareUnit[][],oldset:T[],newset:T[],compare:(le
 function initSquare<T>(oldset:T[],newset:T[]){
     let square:SquareUnit[][]=[];
     for(let i=0;i<=oldset.length;i++){
-        square.push([]);
+        let row=[];
         for(let j=0;j<=newset.length;j++){
             if(i==0){
-                square[i].push({value:j,fromRow:0,fromColumn:j-1});
+                row.push({value:j,fromRow:0,fromColumn:j-1});
                 continue;
             }
             if(j==0){
-                square[i].push({value:i,fromRow:i-1,fromColumn:0});
+                row.push({value:i,fromRow:i-1,fromColumn:0});
                 continue;
             }
-            square[i].push({value:-1,fromRow:-1,fromColumn:-1});
+            row.push({value:-1,fromRow:-1,fromColumn:-1});
         }
+        square.push(row);
     }
     return square;
 }
@@ -69,7 +70,7 @@ interface NextState<T>{
     value:T,
     /**当state为old类型时newValue表示新值 */
     newValue?:T,
-    state:"new"|"delete"|"old"
+    state:"new"|"delete"|"old"|"replace"
 }
 
 function getOpers<T>(square:SquareUnit[][],oldset:T[],newset:T[]):NextState<T>[]{
@@ -84,8 +85,7 @@ function getOpers<T>(square:SquareUnit[][],oldset:T[],newset:T[]):NextState<T>[]
         let unit=square[row][column];
         if(unit.fromColumn==column-1 && unit.fromRow==row-1){
             if(unit.value!=square[row-1][column-1].value){
-                states.push({value:oldset[row-1],state:"delete"});
-                states.push({value:newset[column-1],state:"new"});
+                states.push({value:oldset[row-1],state:"replace",newValue:newset[column-1]});
             }else{
                 states.push({value:oldset[row-1],state:"old",newValue:newset[column-1]});
             }

@@ -1,7 +1,7 @@
-import { BaseComponent, ComponentConstructor } from "./core/BaseComponent";
+import { MVVM, MVVMConstructor } from "./core/MVVM";
 
 export function GetJSModule(name:string){
-        let promise:Promise<ComponentConstructor<any>>;
+        let promise:Promise<MVVMConstructor<any>>;
         if(name=="todov1"){
             promise=import(/*webpackChunkName:"todov1" */"./components/todo/todo-v1").then(module=>{
                 return module.ToDoV1;

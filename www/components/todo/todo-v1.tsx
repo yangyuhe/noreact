@@ -9,7 +9,7 @@ export class ToDoV1 extends ToDo{
     h2(){
         return <h4>Todo List V1</h4>
     }
-    $Template(): VNode {
+    Render(): VNode {
         return <div className="todo">
             {this.h2()}
             <TodoList todos={this.todos}></TodoList>
