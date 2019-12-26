@@ -324,13 +324,4 @@ export class VNode {
             }
         });
     }
-    Dirty() {
-        if (this.type == "custom") {
-            this.instance.$Dirty();
-        } else {
-            this.children.forEach(child => {
-                child.Dirty();
-            });
-        }
-    }
 }

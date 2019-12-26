@@ -21,7 +21,7 @@ let entries={};
 let dir=path.resolve(__dirname,"demo");
 let files=fs.readdirSync(dir);
 files.forEach(file=>{
-    if(file.endsWith(".ts")){
+    if(file.endsWith(".tsx")){
         let name=file.substr(0,file.length-3);
         entries[name]=path.resolve(dir,file);
     }

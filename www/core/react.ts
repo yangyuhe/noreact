@@ -3,10 +3,10 @@ import { MVVMConstructor, MVVM } from "./MVVM";
 import { VNODE_ID } from "./attribute";
 
 const isInBrowser=new Function("try {return this===window;}catch(e){ return false;}");
-class React{
+export class ReactCon{
     private counter=0;
     private mode:"deep"|"shallow"="deep";
-    private target:MVVM<any>;
+    public static target:MVVM<any>;
     ResetCounter(){
         this.counter=0;
     }
@@ -40,31 +40,7 @@ class React{
             }
             
             let mvvm=new Elem(attrs);
-            let watchers:MVVM<any>[]=[];
-            Object.keys(mvvm).forEach((key)=>{
-                if(!(mvvm[key] instanceof Function)){
-                    let descriptor=Object.getOwnPropertyDescriptor(mvvm,key);
-                    if(descriptor.configurable){
-                        let value=mvvm[key];
-                        Object.defineProperty(mvvm,key,{
-                            get:()=>{
-                                if(this.target && watchers.indexOf(this.target)){
-                                    watchers.push(this.target);
-                                }
-                                return value;
-                            },
-                            set:(val)=>{
-                                if(val!=value){
-                                    watchers.forEach(item=>item.$Dirty());
-                                    value=val;
-                                }
-                            },
-                            configurable:false,
-                            enumerable:true
-                        });
-                    }
-                }
-            });
+            
             vnode.SetInstance(mvvm);
             mvvm.$SetChildren(allchildren);
             mvvm.$AttachVNode(vnode);
@@ -80,10 +56,13 @@ class React{
             return vnode;
         }
     }
+
     private flatten(prefix:string,children:any[],res:VNode[]){
         children.forEach((child,index)=>{
+            if(child==null)
+                return;
             if(child instanceof Array){
-                this.flatten(prefix+index,child,res);
+                this.flatten(prefix+index+"_",child,res);
             }else{
                 if(child instanceof VNode){
                     let key=child.GetAttr("key");
@@ -106,5 +85,5 @@ class React{
         this.mode=mode;
     }
 }
-export default new React();
+export default new ReactCon();
 

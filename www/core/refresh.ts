@@ -3,7 +3,7 @@ import { MVVM } from "./MVVM";
 let queue:MVVM<any>[]=[];
 
 let promise:Promise<void>;
-export function PreRefresh(mvvm:MVVM<any>){
+export function InsertQueue(mvvm:MVVM<any>){
     if(queue.indexOf(mvvm)!=-1){
         return;
     }
