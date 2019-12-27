@@ -109,11 +109,6 @@ export class VNode {
     }
     Destroy() {
         this.isDestroyed = true;
-
-        let ref = this.attrs['ref'];
-        if (ref && typeof ref == 'string') {
-            this.setRef(ref, null);
-        }
         if (this.instance) {
             this.instance.onDestroyed();
         }
@@ -126,11 +121,6 @@ export class VNode {
     }
     /**渲染完毕后的回调 */
     Rendered() {
-        let ref = this.attrs.find(attr => attr.name == 'ref');
-        if (ref && typeof ref.value == 'string') {
-            if (this.instance) this.setRef(ref.value, this.instance);
-            else this.setRef(ref.value, this.dom);
-        }
         if (this.type == 'custom') this.instance.$onRendered();
         if (this.type == 'standard') {
             this.children.forEach(child => {
@@ -138,12 +128,24 @@ export class VNode {
             });
         }
     }
-    private setRef(name: string, obj) {
-        let parent = this.parent;
-        while (parent && !parent.instance) {
-            parent = parent.parent;
+    GetDom() {
+        return this.dom;
+    }
+    GetRef(name: string) {
+        let attr = this.attrs.find(attr => attr.name == 'ref' && attr.value == name);
+        if (attr)
+            return this;
+        else {
+            if (!this.instance) {
+                for (let i = 0; i < this.children.length; i++) {
+                    let res = this.children[i].GetRef(name);
+                    if (res) {
+                        return res;
+                    }
+                }
+            }
         }
-        if (parent) parent.instance.$refs[name] = obj;
+        return null;
     }
     GetType() {
         return this.type;

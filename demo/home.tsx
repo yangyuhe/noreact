@@ -14,6 +14,8 @@ class TodoList extends MVVM<void>{
             </div> : null}
         </div>
     }
+    onRendered() {
+    }
     add() {
         this.showpop = true;
     }
@@ -34,10 +36,10 @@ class Add extends MVVM<{ onAdd: Function }>{
         </div>
     }
     onadd() {
-        this.$params.onAdd((this.$refs.input as HTMLInputElement).value);
+        this.$params.onAdd((this.$Ref('input') as HTMLInputElement).value);
     }
     onRendered() {
-        console.log(this.$refs.input)
+        console.log(this.$Ref('input'))
     }
 
 }

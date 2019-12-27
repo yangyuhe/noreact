@@ -13,7 +13,7 @@ export abstract class MVVM<T> {
     /**该组件拥有的子级虚拟树 */
     protected $children: VNode[] = [];
     private $isdirty = false;
-    $refs: { [key: string]: HTMLElement | MVVM<any> } = {};
+    private $refs: { [key: string]: VNode } = {};
 
     constructor(protected $params: T) {
         if ($params == null) (this.$params as any) = {};
@@ -42,7 +42,7 @@ export abstract class MVVM<T> {
         });
     }
     /**渲染完成后该方法会被调用，此时elem成员变量才可以被访问到 */
-    protected onRendered(): void {}
+    protected onRendered(): void { }
     /**该组建的渲染方法，该方法必须返回一个虚拟树 */
     protected abstract Render(): VNode;
 
@@ -108,6 +108,18 @@ export abstract class MVVM<T> {
             this.$diff([this.$root], [newroot], this.$root.GetParent());
             this.$isdirty = false;
         }
+    }
+    $Ref(name: string): (MVVM<any> | HTMLElement) {
+        let ref = this.$refs[name];
+        if (ref && !ref.IsDestroyed()) {
+            if (ref.GetInstance())
+                return ref.GetInstance();
+            else
+                return ref.GetDom() as HTMLElement;
+        }
+        let res = this.$root.GetRef(name);
+        this.$refs[name] = res;
+        return res;
     }
     $DoRender() {
         let keys = [];
@@ -267,7 +279,7 @@ export abstract class MVVM<T> {
     }
 }
 export interface MVVMConstructor<T> {
-    new (params: T): MVVM<T>;
+    new(params: T): MVVM<T>;
 }
 
 let reactiveCache: any = {};
