@@ -1,18 +1,18 @@
-import { ComponentFactory } from "../www/core/component-manager";
-import { Linked } from "./core/linked";
-import "../www/components/house-card/house-card"
+import { ComponentFactory } from '../www/core/component-manager';
+import { Linked } from './core/linked';
+import '../www/components/house-card/house-card';
 
-export let proLinked=new Linked();
-proLinked.Post("/custom",(req,res)=>{
-    let data="";
-    req.setEncoding("utf8");
-    req.on("data",chunk=>{
-        data+=chunk;
+export let proLinked = new Linked();
+proLinked.Post('/custom', (req, res) => {
+    let data = '';
+    req.setEncoding('utf8');
+    req.on('data', chunk => {
+        data += chunk;
     });
-    req.on("end",()=>{
-        try{
-            let modules:{name:string,data:any}[]=JSON.parse(data);
-            let html=`
+    req.on('end', () => {
+        try {
+            let modules: { name: string; data: any }[] = JSON.parse(data);
+            let html = `
             <!DOCTYPE html>
             <html lang="en">
             <head>
@@ -23,34 +23,33 @@ proLinked.Post("/custom",(req,res)=>{
             </head>
             <body>
             `;
-            for(let i=0;i<modules.length;i++){
-                let module=modules[i];
-                if(!module.name){
-                    res.end("module name empty:");
+            for (let i = 0; i < modules.length; i++) {
+                let module = modules[i];
+                if (!module.name) {
+                    res.end('module name empty:');
                     return;
                 }
-                if(!module.data){
-                    res.end("module data empty:");
+                if (!module.data) {
+                    res.end('module data empty:');
                     return;
                 }
-                let instance=ComponentFactory(module.name,module.data);
-                if(instance){
-                    let str=instance.$ToHtml();
-                    html+=str;
-                }else{
+                let instance = ComponentFactory(module.name, module.data);
+                if (instance) {
+                    let str = instance.$ToHtml();
+                    html += str;
+                } else {
                     throw new Error(`[${module.name}]模块找不到`);
                 }
             }
-            html+=`\n<script>
+            html += `\n<script>
                 var $noreact_roots=${data};
             </script>
             <script src="http://localhost:8004/bootstrap.js"></script>
             </body>
             </html>`;
             res.html(html);
-        }catch(err){
-            res.json({message:err.message,stack:err.stack});
-            
+        } catch (err) {
+            res.json({ message: err.message, stack: err.stack });
         }
     });
 });
