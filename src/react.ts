@@ -46,7 +46,7 @@ export class ReactCon {
 
             let mvvm = new Elem(attrs);
 
-            vnode.SetInstance(mvvm);
+            vnode.SetMvvm(mvvm);
             mvvm.$SetChildren(allchildren);
             mvvm.$AttachVNode(vnode);
             if (this.mode == 'deep') {

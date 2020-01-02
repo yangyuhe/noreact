@@ -1,4 +1,4 @@
-.pop{
+.pop {
     position: fixed;
     width: 50%;
     height: 50%;
@@ -7,12 +7,39 @@
     background: white;
     transform: translate(-50%, -50%);
 }
-.pop-mask{
+.pop-mask {
     position: fixed;
     top: 0;
     right: 0;
     left: 0;
     bottom: 0;
-    background:black;
+    background: black;
     opacity: 0.5;
+}
+.todolist {
+    background: gray;
+    padding: 10px;
+    .todo-item {
+        padding: 10px;
+        background: white;
+        display: flex;
+        .todo-content {
+            flex: 1;
+            .todo-des {
+                font-size: 16px;
+            }
+            .todo-time {
+                font-size: 12px;
+                color: #555;
+            }
+        }
+        .operations {
+            width: 100px;
+            display: flex;
+            flex-direction: column;
+            .oper {
+                margin-bottom: 10px;
+            }
+        }
+    }
 }

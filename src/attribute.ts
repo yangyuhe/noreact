@@ -3,22 +3,30 @@ let $isServerRender = false;
 export function ServerRender(isServerRender: boolean) {
     $isServerRender = isServerRender;
 }
-const applyAttr: { [name: string]: (elem: HTMLElement, value: any) => void } = {
+const applyAttr: { [name: string]: (elem: HTMLElement, value: any) => boolean } = {
     style: (elem, value) => {
         if (toString.call(value) == '[object Object]') {
             let str = '';
             for (let key in value) {
                 elem.style[key] = value[key];
             }
-        } else {
-            elem.setAttribute('style', value);
+            return true;
         }
+        return false;
     },
     className: (elem, value) => {
         elem.setAttribute('class', value);
+        return true;
     },
     key: (elem, value) => {
-        return;
+        return true;
+    },
+    value(elem, value) {
+        if (elem instanceof HTMLInputElement) {
+            elem.value = value;
+            return true;
+        }
+        return false;
     }
 };
 const serializeAttr: { [name: string]: (value: any) => string } = {
@@ -58,10 +66,11 @@ export function SerializeAttr(name: string, value: any): string {
 /**toDom方法使用 */
 export function ApplyAttr(elem: HTMLElement, name: string, value: any) {
     if (applyAttr[name]) {
-        applyAttr[name](elem, value);
-    } else {
-        elem.setAttribute(name, value);
+        let res = applyAttr[name](elem, value);
+        if (res)
+            return;
     }
+    elem.setAttribute(name, value);
 }
 
 export function GetEventAttrName(attr: string) {

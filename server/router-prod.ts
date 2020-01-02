@@ -1,6 +1,6 @@
-import { ComponentFactory } from '../www/core/component-manager';
+import { ComponentFactory } from '../src/component-manager';
 import { Linked } from './core/linked';
-import '../www/components/house-card/house-card';
+import '../src/components/house-card/house-card';
 
 export let proLinked = new Linked();
 proLinked.Post('/custom', (req, res) => {

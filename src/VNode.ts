@@ -14,7 +14,7 @@ export class VNode {
     private parent: VNode = null;
 
     /**关联的组件实例，当type='custom'有效 */
-    private instance: MVVM<any>;
+    private mvvm: MVVM<any>;
     /**关联的实际dom元素 */
     private dom: HTMLElement | Text;
     /**节点类型 */
@@ -37,11 +37,11 @@ export class VNode {
     SetText(text: string) {
         this.text = text;
     }
-    SetInstance(component: MVVM<any>) {
-        this.instance = component;
+    SetMvvm(component: MVVM<any>) {
+        this.mvvm = component;
     }
     GetInstance() {
-        return this.instance;
+        return this.mvvm;
     }
     GetParent() {
         return this.parent;
@@ -109,8 +109,8 @@ export class VNode {
     }
     Destroy() {
         this.isDestroyed = true;
-        if (this.instance) {
-            this.instance.onDestroyed();
+        if (this.type == 'custom') {
+            this.mvvm.onDestroyed();
         }
         this.children.forEach(child => {
             child.Destroy();
@@ -121,7 +121,7 @@ export class VNode {
     }
     /**渲染完毕后的回调 */
     Rendered() {
-        if (this.type == 'custom') this.instance.$onRendered();
+        if (this.type == 'custom') this.mvvm.$onRendered();
         if (this.type == 'standard') {
             this.children.forEach(child => {
                 child.Rendered();
@@ -131,12 +131,12 @@ export class VNode {
     GetDom() {
         return this.dom;
     }
-    GetRef(name: string) {
+    GetRef(name: string): VNode {
         let attr = this.attrs.find(attr => attr.name == 'ref' && attr.value == name);
         if (attr)
             return this;
         else {
-            if (!this.instance) {
+            if (this.type != 'custom') {
                 for (let i = 0; i < this.children.length; i++) {
                     let res = this.children[i].GetRef(name);
                     if (res) {
@@ -294,7 +294,7 @@ export class VNode {
     ToHtml(): string {
         if (this.type == 'text') return this.text;
         if (this.type == 'custom') {
-            let html = this.instance.$ToHtml();
+            let html = this.mvvm.$ToHtml();
             return html;
         }
         if (this.type == 'standard') {
@@ -319,7 +319,7 @@ export class VNode {
     }
     ToDom(): (HTMLElement | Text)[] {
         if (this.type == 'custom') {
-            let doms = this.instance.$ToDom();
+            let doms = this.mvvm.$ToDom();
             return doms;
         }
         if (this.type == 'standard') {
@@ -354,19 +354,19 @@ export class VNode {
             return [text];
         }
     }
-    Emit(event: string, ...data: any[]) {
+    EmitUp(event: string, ...data: any[]) {
         if (this.parent) {
             if (this.parent.type == 'custom')
-                this.parent.instance.$Trigger(event, ...data);
-            this.parent.Emit(event, ...data);
+                this.parent.mvvm.$Trigger(event, ...data);
+            this.parent.EmitUp(event, ...data);
         }
     }
-    BroadCast(event: string, ...data: any[]) {
+    EmitDown(event: string, ...data: any[]) {
         this.children.forEach(child => {
             if (child.type == 'custom') {
-                child.instance.$Trigger(event, ...data);
+                child.mvvm.$Trigger(event, ...data);
             }
-            child.BroadCast(event, ...data);
+            child.EmitDown(event, ...data);
         });
     }
 

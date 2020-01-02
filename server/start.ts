@@ -1,11 +1,11 @@
 import http from 'http';
 import { Linked, DefaultLinked } from './core/linked';
 import { proLinked } from './router-prod';
-import React from '../www/core/react';
+import React from '../src/react';
 import config from '../app.json';
 import { test } from './router-test';
 import { staticLinked } from './static';
-import { ServerRender } from '../www/core/attribute';
+import { ServerRender } from '../src/attribute';
 
 let linked = DefaultLinked();
 linked.Use((req, res, next) => {
@@ -24,8 +24,8 @@ let server = http.createServer((req, res) => {
 server.listen(config.node_port, config.node_host, () => {
     console.log(
         'nodejs start listening at http://' +
-            config.node_host +
-            ':' +
-            config.node_port
+        config.node_host +
+        ':' +
+        config.node_port
     );
 });

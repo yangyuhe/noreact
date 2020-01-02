@@ -3,7 +3,7 @@ import { RegisterEvent, TriggerEvent } from './event-center';
 import { VNode } from './VNode';
 import React, { ReactCon } from './react';
 import { InsertQueue } from './refresh';
-export abstract class MVVM<T> {
+export abstract class MVVM<T extends { [key: string]: any } | void> {
     private $root: VNode;
     private $attachedVNode: VNode;
     /**组件内部的事件注册中心 */
@@ -15,9 +15,9 @@ export abstract class MVVM<T> {
     private $isdirty = false;
     private $refs: { [key: string]: VNode } = {};
 
-    constructor(protected $params: T) {
-        if ($params == null) (this.$params as any) = {};
-        this.$WatchParams(this.$params);
+    constructor(protected $props: T) {
+        if ($props == null) (this.$props as any) = {};
+        this.$WatchParams(this.$props);
     }
     public $WatchParams(obj) {
         if (!obj || typeof obj != 'object') return;
@@ -47,24 +47,24 @@ export abstract class MVVM<T> {
     protected abstract Render(): VNode;
 
     /**向所有父级发送消息 */
-    protected $emit<Message>(event: string, data: Message) {
-        this.$root.Emit(event, this, data);
+    protected $emitUp<Message>(event: string, data: Message) {
+        this.$root.EmitUp(event, data, this);
     }
     /**向所有子级发送消息 */
-    protected $broadcast<Message>(event: string, data: Message) {
-        this.$root.BroadCast(event, this, data);
+    protected $emitDown<Message>(event: string, data: Message) {
+        this.$root.EmitDown(event, data, this);
     }
     /**监听事件 */
     protected $on<Message>(
         event: string,
-        callback: (target: MVVM<any>, data: Message) => void
+        callback: (data: Message, target: MVVM<any>) => void
     ) {
         if (!this.$eventRegister[event]) this.$eventRegister[event] = [];
         this.$eventRegister[event].push(callback);
         RegisterEvent(event, callback);
     }
     /**发送一个全局事件 */
-    protected $notify<Message>(event: string, data: Message) {
+    protected $broadcast<Message>(event: string, data: Message) {
         TriggerEvent(event, this, data);
     }
     /**触发该组件的某个事件监听 */
@@ -118,53 +118,85 @@ export abstract class MVVM<T> {
                 return ref.GetDom() as HTMLElement;
         }
         let res = this.$root.GetRef(name);
+        if (!res)
+            return null;
         this.$refs[name] = res;
-        return res;
+        if (res.GetInstance())
+            return res.GetInstance();
+        else
+            return res.GetDom() as HTMLElement;
     }
     $DoRender() {
         let keys = [];
         Object.keys(this).forEach(key => {
             if (!key.startsWith('$')) keys.push(key);
         });
-        keys.length > 0 && this.attachWatcher(this, keys);
+        keys.length > 0 && this.watchObject(this, keys);
 
         let old = ReactCon.target;
         ReactCon.target = this;
         this.$root = this.Render();
+        if (!this.$attachedVNode) {
+            this.$attachedVNode = new VNode("custom");
+            this.$attachedVNode.SetMvvm(this);
+        }
         this.$root.SetParent(this.$attachedVNode);
         ReactCon.target = old;
         return this.$root;
     }
-    private attachWatcher(obj: Object, keys: string[]) {
-        if (toString.call(obj) != '[object Object]') return;
-        let watchers: MVVM<any>[] = [];
-        ((keys && keys.length > 0 && keys) || Object.keys(obj)).forEach(key => {
-            let descriptor = Object.getOwnPropertyDescriptor(obj, key);
-            if (descriptor && descriptor.configurable) {
-                let value = obj[key];
-                Object.defineProperty(obj, key, {
-                    get: () => {
-                        if (
-                            ReactCon.target &&
-                            watchers.indexOf(ReactCon.target)
-                        ) {
-                            watchers.push(ReactCon.target);
-                        }
-                        return value;
-                    },
-                    set: val => {
-                        if (val != value) {
-                            watchers.forEach(item => item.$Dirty());
-                            value = val;
-                            this.attachWatcher(value, []);
-                        }
-                    },
-                    configurable: false,
-                    enumerable: true
-                });
-                this.attachWatcher(value, []);
+    private watchObject(obj: any, keys?: string[]) {
+        if (toString.call(obj) == '[object Object]' || toString.call(obj) == '[object Array]') {
+            let watchers: MVVM<any>[] = [];
+            ((keys && keys.length > 0 && keys) || Object.keys(obj)).forEach(key => {
+                let descriptor = Object.getOwnPropertyDescriptor(obj, key);
+                if (descriptor && descriptor.configurable) {
+                    let value = obj[key];
+                    Object.defineProperty(obj, key, {
+                        get: () => {
+                            if (
+                                ReactCon.target &&
+                                watchers.indexOf(ReactCon.target)
+                            ) {
+                                watchers.push(ReactCon.target);
+                            }
+                            return value;
+                        },
+                        set: val => {
+                            if (val != value) {
+                                watchers.forEach(item => item.$Dirty());
+                                value = val;
+
+                                if (toString.call(value) == "[object Array]")
+                                    this.watchArray(value, watchers);
+                                this.watchObject(value);
+                            }
+                        },
+                        configurable: false,
+                        enumerable: true
+                    });
+                    if (toString.call(value) == "[object Array]")
+                        this.watchArray(value, watchers);
+                    this.watchObject(value);
+                }
+            });
+            return;
+        }
+    }
+    private watchArray(arr, watchers: MVVM<any>[]) {
+        this.overwriteArrayMethods(arr, 'pop', watchers);
+        this.overwriteArrayMethods(arr, 'push', watchers);
+        this.overwriteArrayMethods(arr, 'splice', watchers);
+        this.overwriteArrayMethods(arr, 'unshift', watchers);
+        this.overwriteArrayMethods(arr, 'shift', watchers);
+    }
+    private overwriteArrayMethods(arr: any[], methodname: string, watchers: MVVM<any>[]) {
+        let method = arr[methodname];
+        if (typeof method == 'function') {
+            arr[method] = function () {
+                watchers.forEach(item => item.$Dirty());
+                return method.apply(this, arguments);
             }
-        });
+        }
     }
     private $diff(olds: VNode[], news: VNode[], parent: VNode) {
         let opers = Diff(olds, news, MVVM.$compareVNode);
@@ -177,17 +209,17 @@ export abstract class MVVM<T> {
                     let instance = oper.value.GetInstance();
                     let dirty = oper.newValue.GetInstance().$isdirty;
                     if (dirty) {
-                        instance.$params = oper.newValue.GetInstance().$params;
-                        instance.$WatchParams(instance.$params);
+                        instance.$props = oper.newValue.GetInstance().$props;
+                        instance.$WatchParams(instance.$props);
                         instance.$ApplyRefresh();
                     } else {
                         Object.assign(
-                            instance.$params,
-                            oper.newValue.GetInstance().$params
+                            instance.$props,
+                            oper.newValue.GetInstance().$props
                         );
                         if (instance.$isdirty) {
-                            instance.$params = oper.newValue.GetInstance().$params;
-                            instance.$WatchParams(instance.$params);
+                            instance.$props = oper.newValue.GetInstance().$props;
+                            instance.$WatchParams(instance.$props);
                             instance.$ApplyRefresh();
                         }
                     }
