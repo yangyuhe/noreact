@@ -1,7 +1,7 @@
 import { Diff } from './diff';
 import { RegisterEvent, TriggerEvent } from './event-center';
 import { VNode } from './VNode';
-import React, { ReactCon } from './react';
+import NoReact from './noreact';
 import { InsertQueue } from './refresh';
 export abstract class MVVM<T extends { [key: string]: any } | void> {
     private $root: VNode;
@@ -97,14 +97,14 @@ export abstract class MVVM<T extends { [key: string]: any } | void> {
     }
     $ApplyRefresh() {
         if (this.$isdirty) {
-            React.ChangeMode('shallow');
+            NoReact.ChangeMode('shallow');
 
-            let old = ReactCon.target;
-            ReactCon.target = this;
+            let old = NoReact.target;
+            NoReact.target = this;
             let newroot = this.Render();
-            ReactCon.target = old;
+            NoReact.target = old;
 
-            React.ChangeMode('deep');
+            NoReact.ChangeMode('deep');
             this.$diff([this.$root], [newroot], this.$root.GetParent());
             this.$isdirty = false;
         }
@@ -133,15 +133,15 @@ export abstract class MVVM<T extends { [key: string]: any } | void> {
         });
         keys.length > 0 && this.watchObject(this, keys);
 
-        let old = ReactCon.target;
-        ReactCon.target = this;
+        let old = NoReact.target;
+        NoReact.target = this;
         this.$root = this.Render();
         if (!this.$attachedVNode) {
             this.$attachedVNode = new VNode("custom");
             this.$attachedVNode.SetMvvm(this);
         }
         this.$root.SetParent(this.$attachedVNode);
-        ReactCon.target = old;
+        NoReact.target = old;
         return this.$root;
     }
     private watchObject(obj: any, keys?: string[]) {
@@ -154,10 +154,10 @@ export abstract class MVVM<T extends { [key: string]: any } | void> {
                     Object.defineProperty(obj, key, {
                         get: () => {
                             if (
-                                ReactCon.target &&
-                                watchers.indexOf(ReactCon.target)
+                                NoReact.target &&
+                                watchers.indexOf(NoReact.target)
                             ) {
-                                watchers.push(ReactCon.target);
+                                watchers.push(NoReact.target);
                             }
                             return value;
                         },

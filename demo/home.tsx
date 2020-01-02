@@ -1,4 +1,4 @@
-import { React, MVVM, VNode } from "../src";
+import { NoReact, MVVM, VNode } from "../src";
 import "./style.scss";
 
 class TodoList extends MVVM<void>{

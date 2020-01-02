@@ -1,7 +1,7 @@
 import http from 'http';
 import { Linked, DefaultLinked } from './core/linked';
 import { proLinked } from './router-prod';
-import React from '../src/react';
+import React from '../src/noreact';
 import config from '../app.json';
 import { test } from './router-test';
 import { staticLinked } from './static';

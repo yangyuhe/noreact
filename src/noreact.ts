@@ -5,10 +5,10 @@ import { VNODE_ID } from './attribute';
 const isInBrowser = new Function(
     'try {return this===window;}catch(e){ return false;}'
 );
-export class ReactCon {
+class NoReact {
     private counter = 0;
     private mode: 'deep' | 'shallow' = 'deep';
-    public static target: MVVM<any>;
+    public target: MVVM<any>;
     ResetCounter() {
         this.counter = 0;
     }
@@ -89,4 +89,4 @@ export class ReactCon {
         this.mode = mode;
     }
 }
-export default new ReactCon();
+export default new NoReact();
