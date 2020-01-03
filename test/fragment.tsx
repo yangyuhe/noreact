@@ -1,5 +1,4 @@
-import { MVVM } from "../www/core/MVVM";
-import { VNode } from "../www/core/VNode";
+import { MVVM, VNode, NoReact } from "../src";
 
 export class Fragment extends MVVM<void>{
     protected Render(): VNode {
@@ -8,5 +7,5 @@ export class Fragment extends MVVM<void>{
             <h2>f2</h2>
         </fragment>
     }
-    
+
 }

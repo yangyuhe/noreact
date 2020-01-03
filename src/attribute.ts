@@ -6,7 +6,6 @@ export function ServerRender(isServerRender: boolean) {
 const applyAttr: { [name: string]: (elem: HTMLElement, value: any) => boolean } = {
     style: (elem, value) => {
         if (toString.call(value) == '[object Object]') {
-            let str = '';
             for (let key in value) {
                 elem.style[key] = value[key];
             }
@@ -24,6 +23,31 @@ const applyAttr: { [name: string]: (elem: HTMLElement, value: any) => boolean } 
     value(elem, value) {
         if (elem instanceof HTMLInputElement) {
             elem.value = value;
+            return true;
+        }
+        return false;
+    }
+};
+const removeAttr: { [name: string]: (elem: HTMLElement, value: any) => boolean } = {
+    style: (elem, value) => {
+        if (toString.call(value) == '[object Object]') {
+            for (let key in value) {
+                elem.style[key] = '';
+            }
+            return true;
+        }
+        return false;
+    },
+    className: (elem, value) => {
+        elem.setAttribute('class', '');
+        return true;
+    },
+    key: (elem, value) => {
+        return true;
+    },
+    value(elem, value) {
+        if (elem instanceof HTMLInputElement) {
+            elem.value = '';
             return true;
         }
         return false;
@@ -72,7 +96,14 @@ export function ApplyAttr(elem: HTMLElement, name: string, value: any) {
     }
     elem.setAttribute(name, value);
 }
-
+export function RemoveAttr(elem: HTMLElement, name: string, value: any) {
+    if (removeAttr[name]) {
+        let res = removeAttr[name](elem, value);
+        if (res)
+            return;
+    }
+    elem.setAttribute(name, '');
+}
 export function GetEventAttrName(attr: string) {
     if (/^on([A-Z][a-z]+)+$/.test(attr)) {
         return attr.slice(2).toLowerCase();

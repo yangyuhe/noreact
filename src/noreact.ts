@@ -70,7 +70,7 @@ class NoReact {
             } else {
                 if (child instanceof VNode) {
                     let key = child.GetAttr('key');
-                    if (key) {
+                    if (key != null) {
                         res.push(child);
                     } else {
                         child.SetAttr('key', prefix + index);

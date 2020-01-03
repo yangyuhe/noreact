@@ -3,9 +3,12 @@ export function Diff<T>(
     newset: T[],
     compare: (left: T, right: T) => boolean
 ) {
+    let o2n = {};
+    let n2o = {};
     let square: SquareUnit[][] = initSquare(oldset, newset);
-    findShortest<T>(square, oldset, newset, compare);
-    let opers = getOpers(square, oldset, newset);
+    findShortest<T>(square, oldset, newset, compare, o2n, n2o);
+    let opers = getOpers(square, oldset, newset, o2n, n2o);
+    opers.reverse();
     return opers;
 }
 
@@ -13,35 +16,47 @@ function findShortest<T>(
     square: SquareUnit[][],
     oldset: T[],
     newset: T[],
-    compare: (left: T, right: T) => boolean
+    compare: (left: T, right: T) => boolean,
+    o2n,
+    n2o
 ): number {
     let target = square[oldset.length][newset.length];
     if (target.value != -1) return target.value;
 
     let lastnum = 0;
     let same = compare(oldset[oldset.length - 1], newset[newset.length - 1]);
-    if (same) lastnum = 0;
+    if (same) {
+        lastnum = 0;
+        o2n[oldset.length - 1] = newset.length - 1;
+        n2o[newset.length - 1] = oldset.length - 1;
+    }
     else lastnum = 1;
     let p1 =
         findShortest(
             square,
             oldset.slice(0, oldset.length - 1),
             newset,
-            compare
+            compare,
+            o2n,
+            n2o
         ) + 1;
     let p2 =
         findShortest(
             square,
             oldset,
             newset.slice(0, newset.length - 1),
-            compare
+            compare,
+            o2n,
+            n2o
         ) + 1;
     let p3 =
         findShortest(
             square,
             oldset.slice(0, oldset.length - 1),
             newset.slice(0, newset.length - 1),
-            compare
+            compare,
+            o2n,
+            n2o
         ) + lastnum;
 
     let min = Math.min(p1, p2, p3);
@@ -88,16 +103,20 @@ interface SquareUnit {
     fromColumn: number;
 }
 interface NextState<T> {
-    value: T;
+    oldValue?: T;
+    isdeprecated?: boolean,
     /**当state为old类型时newValue表示新值 */
     newValue?: T;
+    newValueOrigin?: T;
     state: 'new' | 'delete' | 'old' | 'replace';
 }
 
 function getOpers<T>(
     square: SquareUnit[][],
     oldset: T[],
-    newset: T[]
+    newset: T[],
+    o2n,
+    n2o
 ): NextState<T>[] {
     let column = newset.length;
     let row = oldset.length;
@@ -111,13 +130,15 @@ function getOpers<T>(
         if (unit.fromColumn == column - 1 && unit.fromRow == row - 1) {
             if (unit.value != square[row - 1][column - 1].value) {
                 states.push({
-                    value: oldset[row - 1],
+                    oldValue: oldset[row - 1],
+                    isdeprecated: o2n[row - 1] == null,
                     state: 'replace',
-                    newValue: newset[column - 1]
+                    newValue: newset[column - 1],
+                    newValueOrigin: oldset[n2o[column - 1]]
                 });
             } else {
                 states.push({
-                    value: oldset[row - 1],
+                    oldValue: oldset[row - 1],
                     state: 'old',
                     newValue: newset[column - 1]
                 });
@@ -127,12 +148,12 @@ function getOpers<T>(
             continue;
         }
         if (unit.fromColumn == column && unit.fromRow == row - 1) {
-            states.push({ value: oldset[row - 1], state: 'delete' });
+            states.push({ oldValue: oldset[row - 1], state: 'delete', isdeprecated: o2n[row - 1] == null });
             row--;
             continue;
         }
         if (unit.fromColumn == column - 1 && unit.fromRow == row) {
-            states.push({ value: newset[column - 1], state: 'new' });
+            states.push({ newValue: newset[column - 1], state: 'new', newValueOrigin: oldset[n2o[column - 1]] });
             column--;
             continue;
         }

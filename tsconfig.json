@@ -1,5 +1,5 @@
 {
-    "exclude": ["./test", "./dist"],
+    "exclude": ["./dist"],
     "compilerOptions": {
         "jsxFactory": "NoReact.createElement",
         "resolveJsonModule": true,

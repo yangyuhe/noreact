@@ -3,7 +3,7 @@ import { RegisterEvent, TriggerEvent } from './event-center';
 import { VNode } from './VNode';
 import NoReact from './noreact';
 import { InsertQueue } from './refresh';
-export abstract class MVVM<T extends { [key: string]: any } | void> {
+export abstract class MVVM<T> {
     private $root: VNode;
     private $attachedVNode: VNode;
     /**组件内部的事件注册中心 */
@@ -14,44 +14,30 @@ export abstract class MVVM<T extends { [key: string]: any } | void> {
     protected $children: VNode[] = [];
     private $isdirty = false;
     private $refs: { [key: string]: VNode } = {};
+    protected $props: T;
+    private hasRenderedDom = false;
 
-    constructor(protected $props: T) {
-        if ($props == null) (this.$props as any) = {};
-        this.$WatchParams(this.$props);
+    constructor($props: T) {
+        if (toString.call($props) == '[object Object]') {
+            this.$props = $props;
+            this.watchObject(this.$props);
+        }
     }
-    public $WatchParams(obj) {
-        if (!obj || typeof obj != 'object') return;
-        Object.keys(obj).forEach(key => {
-            let descriptor = Object.getOwnPropertyDescriptor(obj, key);
-            if (descriptor && descriptor.configurable) {
-                let value = obj[key];
-                Object.defineProperty(obj, key, {
-                    get: () => {
-                        return value;
-                    },
-                    set: newval => {
-                        if (newval != value) {
-                            value = newval;
-                            this.$isdirty = true;
-                            this.$WatchParams(value);
-                        }
-                    }
-                });
-                this.$WatchParams(value);
-            }
-        });
-    }
+    /**初始化函数 */
+    protected onInit(): void { }
     /**渲染完成后该方法会被调用，此时elem成员变量才可以被访问到 */
     protected onRendered(): void { }
+    /**销毁函数 */
+    protected onDestroyed(): void { }
     /**该组建的渲染方法，该方法必须返回一个虚拟树 */
     protected abstract Render(): VNode;
 
     /**向所有父级发送消息 */
-    protected $emitUp<Message>(event: string, data: Message) {
+    protected $emitUp<Message>(event: string, data?: Message) {
         this.$root.EmitUp(event, data, this);
     }
     /**向所有子级发送消息 */
-    protected $emitDown<Message>(event: string, data: Message) {
+    protected $emitDown<Message>(event: string, data?: Message) {
         this.$root.EmitDown(event, data, this);
     }
     /**监听事件 */
@@ -64,7 +50,7 @@ export abstract class MVVM<T extends { [key: string]: any } | void> {
         RegisterEvent(event, callback);
     }
     /**发送一个全局事件 */
-    protected $broadcast<Message>(event: string, data: Message) {
+    protected $broadcast<Message>(event: string, data?: Message) {
         TriggerEvent(event, this, data);
     }
     /**触发该组件的某个事件监听 */
@@ -75,6 +61,7 @@ export abstract class MVVM<T extends { [key: string]: any } | void> {
         }
     }
     $ToDom(): (HTMLElement | Text)[] {
+        this.hasRenderedDom = true;
         if (!this.$root) this.$DoRender();
         let dom = this.$root.ToDom();
         return dom;
@@ -92,8 +79,10 @@ export abstract class MVVM<T extends { [key: string]: any } | void> {
         this.$children = children;
     }
     $Dirty() {
-        this.$isdirty = true;
-        InsertQueue(this);
+        if (!this.$isdirty) {
+            this.$isdirty = true;
+            InsertQueue(this);
+        }
     }
     $ApplyRefresh() {
         if (this.$isdirty) {
@@ -115,7 +104,7 @@ export abstract class MVVM<T extends { [key: string]: any } | void> {
             if (ref.GetInstance())
                 return ref.GetInstance();
             else
-                return ref.GetDom() as HTMLElement;
+                return ref.GetDom() && ref.GetDom()[0] as HTMLElement;
         }
         let res = this.$root.GetRef(name);
         if (!res)
@@ -124,9 +113,10 @@ export abstract class MVVM<T extends { [key: string]: any } | void> {
         if (res.GetInstance())
             return res.GetInstance();
         else
-            return res.GetDom() as HTMLElement;
+            return ref.GetDom() && res.GetDom()[0] as HTMLElement;
     }
     $DoRender() {
+        this.onInit();
         let keys = [];
         Object.keys(this).forEach(key => {
             if (!key.startsWith('$')) keys.push(key);
@@ -192,120 +182,125 @@ export abstract class MVVM<T extends { [key: string]: any } | void> {
     private overwriteArrayMethods(arr: any[], methodname: string, watchers: MVVM<any>[]) {
         let method = arr[methodname];
         if (typeof method == 'function') {
-            arr[method] = function () {
-                watchers.forEach(item => item.$Dirty());
-                return method.apply(this, arguments);
+            Object.defineProperty(arr, methodname, {
+                value: function () {
+                    watchers.forEach(item => item.$Dirty());
+                    return method.apply(this, arguments);
+                },
+                configurable: false
+            });
+        }
+    }
+    private useOld(oldNode: VNode, newNode: VNode) {
+        if (oldNode.GetType() == 'custom') {
+            let instance = oldNode.GetInstance();
+            let newInstance = newNode.GetInstance();
+            if (instance.$isdirty) {
+                instance.$props = newInstance.$props;
+                instance.watchObject(instance.$props);
+                instance.$ApplyRefresh();
+            } else {
+                Object.assign(
+                    instance.$props,
+                    newInstance.$props
+                );
             }
+            return;
+        }
+        if (oldNode.GetType() == 'standard') {
+            oldNode.ApplyAttrDiff(newNode.GetAttrs());
+            this.$diff(
+                oldNode.GetChildren(),
+                newNode.GetChildren(),
+                oldNode
+            );
+            return;
+        }
+        if (oldNode.GetType() == 'text') {
+            return;
         }
     }
     private $diff(olds: VNode[], news: VNode[], parent: VNode) {
         let opers = Diff(olds, news, MVVM.$compareVNode);
-        opers.reverse();
-        let index = 0;
-        opers.forEach(oper => {
-            if (oper.state == 'old') {
-                index++;
-                if (oper.value.GetType() == 'custom') {
-                    let instance = oper.value.GetInstance();
-                    let dirty = oper.newValue.GetInstance().$isdirty;
-                    if (dirty) {
-                        instance.$props = oper.newValue.GetInstance().$props;
-                        instance.$WatchParams(instance.$props);
-                        instance.$ApplyRefresh();
-                    } else {
-                        Object.assign(
-                            instance.$props,
-                            oper.newValue.GetInstance().$props
-                        );
-                        if (instance.$isdirty) {
-                            instance.$props = oper.newValue.GetInstance().$props;
-                            instance.$WatchParams(instance.$props);
-                            instance.$ApplyRefresh();
-                        }
-                    }
 
-                    return;
-                }
-                if (oper.value.GetType() == 'standard') {
-                    oper.value.ApplyAttrDiff(oper.newValue.GetAttrs());
-                    this.$diff(
-                        oper.value.GetChildren(),
-                        oper.newValue.GetChildren(),
-                        oper.value
-                    );
-                    return;
-                }
-                if (oper.value.GetType() == 'text') {
-                    return;
-                }
+        let index = 0;
+        opers.forEach(item => {
+            if (item.state == 'old') {
+                index++;
+                this.useOld(item.oldValue, item.newValue);
                 return;
             }
-            if (oper.state == 'new') {
-                if (oper.value.GetType() == 'custom') {
-                    oper.value.GetInstance().$DoRender();
-                    parent.InsertVNode(oper.value, index);
+            if (item.state == 'new') {
+                if (item.newValueOrigin) {
+                    this.useOld(item.newValueOrigin, item.newValue);
+                    parent.InsertVNode(item.newValueOrigin, index);
                 } else {
-                    parent.InsertVNode(oper.value, index);
+                    if (this.hasRenderedDom)
+                        item.newValue.ToDom();
+                    parent.InsertVNode(item.newValue, index);
+                    if (this.hasRenderedDom)
+                        item.newValue.Rendered();
                 }
                 index++;
                 return;
             }
-            if (oper.state == 'delete') {
-                parent.RemoveVNode(oper.value);
+            if (item.state == 'delete') {
+                parent.RemoveVNode(item.oldValue, index, item.isdeprecated);
+                if (item.isdeprecated) {
+                    item.oldValue.Destroy();
+                }
                 return;
             }
-            if (oper.state == 'replace') {
-                parent.RemoveVNode(oper.value);
-                if (oper.newValue.GetType() == 'custom') {
-                    oper.newValue.GetInstance().$DoRender();
-                    parent.InsertVNode(oper.newValue, index);
-                } else {
-                    parent.InsertVNode(oper.newValue, index);
+            if (item.state == 'replace') {
+                parent.RemoveVNode(item.oldValue, index, item.isdeprecated);
+                if (item.isdeprecated) {
+                    item.oldValue.Destroy();
                 }
+                if (item.newValueOrigin) {
+                    this.useOld(item.newValueOrigin, item.newValue);
+                    parent.InsertVNode(item.newValueOrigin, index);
+                } else {
+                    if (this.hasRenderedDom)
+                        item.newValue.ToDom();
+                    parent.InsertVNode(item.newValue, index);
+                    if (this.hasRenderedDom)
+                        item.newValue.Rendered();
+                }
+                index++;
             }
         });
     }
-    $onRendered() {
+    $Rendered() {
         this.$root.Rendered();
         this.onRendered();
     }
-    onDestroyed() {
+    $Destroy() {
+        this.onDestroyed();
         this.$root.Destroy();
     }
     $AttachVNode(vnode: VNode) {
         this.$attachedVNode = vnode;
     }
-    $HasParent(mvvm: MVVM<any>) {
-        if (!mvvm) return false;
-        let vnode = this.$attachedVNode;
-        while (vnode) {
-            vnode = vnode.GetParent();
-            if (vnode && vnode.GetInstance() == mvvm) {
-                return true;
-            }
-        }
-        return false;
-    }
-    static $compareVNode(left: VNode, rigth: VNode) {
-        if (left.GetAttr('key') != rigth.GetAttr('key')) {
+    static $compareVNode(left: VNode, right: VNode) {
+        if (left.GetAttr('key') != right.GetAttr('key')) {
             return false;
         }
-        if (left.GetType() != rigth.GetType()) {
+        if (left.GetType() != right.GetType()) {
             return false;
         }
         if (left.GetType() == 'custom') {
             if (
                 left.GetInstance().constructor !=
-                rigth.GetInstance().constructor
+                right.GetInstance().constructor
             ) {
                 return false;
             }
         }
         if (left.GetType() == 'standard') {
-            if (left.GetTag() != rigth.GetTag()) return false;
+            if (left.GetTag() != right.GetTag()) return false;
         }
         if (left.GetType() == 'text') {
-            if (left.GetText() != rigth.GetText()) return false;
+            if (left.GetText() != right.GetText()) return false;
         }
         return true;
     }

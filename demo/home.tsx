@@ -1,7 +1,7 @@
 import { NoReact, MVVM, VNode } from "../src";
 import "./style.scss";
 
-class TodoList extends MVVM<void>{
+class TodoList extends MVVM<void> {
     private list: { id: number, content: string, time: string }[] = []
     private generate = 0;
     private showpop = false;
@@ -10,10 +10,7 @@ class TodoList extends MVVM<void>{
         return <div class="todolist">
             {this.list.map(item => <ToDoItem key={item.id} id={item.id} content={item.content} time={item.time}></ToDoItem>)}
             <button class="button add" onClick={this.add.bind(this)}>add</button>
-            {this.showpop ? <div className="pop-mask"></div> : null}
-            {this.showpop ? <div className="pop">
-                <Add onAdd={this.onadd.bind(this)} editItem={this.editTarget}></Add>
-            </div> : null}
+            {this.showpop ? <Add onAdd={this.onadd.bind(this)} editItem={this.editTarget}></Add> : null}
         </div>
     }
     onRendered() {
@@ -37,9 +34,13 @@ class TodoList extends MVVM<void>{
                 [this.list[index - 1], this.list[index]] = [this.list[index], this.list[index - 1]];
             }
         });
+        this.$on("close", () => {
+            this.showpop = false;
+        });
     }
     add() {
         this.showpop = true;
+        this.editTarget = null;
     }
     onadd(content: string, time: string, id: number) {
         if (id != null) {
@@ -58,11 +59,13 @@ class TodoList extends MVVM<void>{
     }
 
 }
-class ToDoItem extends MVVM<{ id: number, content: string, time: string }>{
+
+class ToDoItem extends MVVM<ITodoItem> {
+    private counter: number = 0;
     protected Render(): VNode {
         return <div className="todo-item">
             <div className="todo-content">
-                <div className="todo-time">{this.$props.time}</div>
+                <div className="todo-time">{this.$props.time} |counter:{this.counter}</div>
                 <div className="todo-des">{this.$props.content}</div>
                 <input type="text" />
             </div>
@@ -73,6 +76,11 @@ class ToDoItem extends MVVM<{ id: number, content: string, time: string }>{
                 <button onClick={this.doAction.bind(this, 'delete')} className="oper delete">delete</button>
             </div>
         </div>
+    }
+    onInit() {
+        setInterval(() => {
+            this.counter++;
+        }, 1000);
     }
     doAction(action: string) {
         this.$emitUp(action, this.$props.id);
@@ -86,21 +94,25 @@ interface ITodoItem {
 class Add extends MVVM<{ onAdd: (content: string, time: string, id: number) => void, editItem: ITodoItem }>{
     cotent: string = "";
     time: string = "";
-    constructor($props: { onAdd: (content: string, time: string) => void, editItem: ITodoItem }) {
-        super($props);
+    onInit() {
         if (this.$props.editItem) {
             this.cotent = this.$props.editItem.content;
             this.time = this.$props.editItem.time;
         }
-
     }
     protected Render(): VNode {
-        return <div className="add-todo">
-            content:
-            <input value={this.cotent} onChange={this.onchange.bind(this, 'cotent')}></input>
-            <input type="date" value={this.time} onChange={this.onchange.bind(this, 'time')} />
-            <button onClick={this.onadd.bind(this)}>ok</button>
-        </div>
+        return <fragment>
+            <div className="pop-mask"></div>
+            <div className="pop">
+                <div className="add-todo">
+                    content:
+                    <input value={this.cotent} onChange={this.onchange.bind(this, 'cotent')}></input>
+                    <input type="date" value={this.time} onChange={this.onchange.bind(this, 'time')} />
+                    <button onClick={this.cancel.bind(this)}>cancel</button>
+                    <button onClick={this.onadd.bind(this)}>ok</button>
+                </div>
+            </div>
+        </fragment>
     }
     onadd() {
         this.$props.onAdd(this.cotent, this.time, this.$props.editItem == null ? null : this.$props.editItem.id);
@@ -110,11 +122,17 @@ class Add extends MVVM<{ onAdd: (content: string, time: string, id: number) => v
     onchange(field, event) {
         this[field] = event.target.value;
     }
+    cancel() {
+        this.$emitUp("close")
+    }
+}
+class About {
+
 }
 document.addEventListener("DOMContentLoaded", () => {
     let about = new TodoList();
     (window as any).noreact = about;
     let dom = about.$ToDom();
     document.body.append(dom[0]);
-    about.$onRendered();
+    about.$Rendered();
 });
