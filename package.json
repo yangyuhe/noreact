@@ -35,6 +35,6 @@
         "webpack-manifest-plugin": "^2.0.4"
     },
     "dependencies": {
-        "axios": "^0.18.0"
+        "axios": "^0.18.1"
     }
 }
