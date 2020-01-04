@@ -1,5 +1,15 @@
-import { NoReact, MVVM, VNode } from "../src";
+import { React, MVVM, VNode } from "../src";
 import "./style.scss";
+
+namespace JSX {
+    interface IntrinsicElements {
+        [elemName: string]: any;
+    }
+    interface IntrinsicAttributes {
+        ref?: any;
+        key?: any;
+    }
+}
 
 class TodoList extends MVVM<void> {
     private list: { id: number, content: string, time: string }[] = []

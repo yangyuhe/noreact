@@ -1,4 +1,4 @@
-import { MVVM, VNode, NoReact } from "../src";
+import { MVVM, VNode, React } from "../src";
 
 export class Fragment extends MVVM<void>{
     protected Render(): VNode {

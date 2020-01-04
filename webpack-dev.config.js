@@ -2,7 +2,6 @@ const path = require('path');
 const ManifestPlugin = require('webpack-manifest-plugin');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 const webpack = require('webpack');
-const config = require('./app.json');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const fs = require('fs');
 
@@ -48,9 +47,6 @@ module.exports = {
                             },
                             onlyCompileBundledFiles: true
                         }
-                    },
-                    {
-                        loader: 'stylename-loader'
                     }
                 ]
             },
@@ -96,8 +92,8 @@ module.exports = {
         historyApiFallback: true,
         hot: true,
         stats: { colors: true },
-        host: config.webpack_host,
-        port: config.demo
+        host: 'localhost',
+        port: '8004'
     },
     stats: 'normal'
 };

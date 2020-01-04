@@ -1,4 +1,12 @@
-import { NoReact, MVVM } from "../src"
+import { React, MVVM } from "../src"
+declare global {
+    namespace JSX {
+        interface IntrinsicAttributes {
+            ref?: any;
+            key?: any;
+        }
+    }
+}
 class Test extends MVVM<void>{
     list = [{ name: "a" }, { name: 'b' }];
     Render() {

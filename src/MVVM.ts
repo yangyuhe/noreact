@@ -1,8 +1,9 @@
 import { Diff } from './diff';
 import { RegisterEvent, TriggerEvent } from './event-center';
 import { VNode } from './VNode';
-import NoReact from './noreact';
+import React from './react';
 import { InsertQueue } from './refresh';
+
 export abstract class MVVM<T> {
     private $root: VNode;
     private $attachedVNode: VNode;
@@ -86,14 +87,14 @@ export abstract class MVVM<T> {
     }
     $ApplyRefresh() {
         if (this.$isdirty) {
-            NoReact.ChangeMode('shallow');
+            React.ChangeMode('shallow');
 
-            let old = NoReact.target;
-            NoReact.target = this;
+            let old = React.target;
+            React.target = this;
             let newroot = this.Render();
-            NoReact.target = old;
+            React.target = old;
 
-            NoReact.ChangeMode('deep');
+            React.ChangeMode('deep');
             this.$diff([this.$root], [newroot], this.$root.GetParent());
             this.$isdirty = false;
         }
@@ -123,15 +124,15 @@ export abstract class MVVM<T> {
         });
         keys.length > 0 && this.watchObject(this, keys);
 
-        let old = NoReact.target;
-        NoReact.target = this;
+        let old = React.target;
+        React.target = this;
         this.$root = this.Render();
         if (!this.$attachedVNode) {
             this.$attachedVNode = new VNode("custom");
             this.$attachedVNode.SetMvvm(this);
         }
         this.$root.SetParent(this.$attachedVNode);
-        NoReact.target = old;
+        React.target = old;
         return this.$root;
     }
     private watchObject(obj: any, keys?: string[]) {
@@ -144,10 +145,10 @@ export abstract class MVVM<T> {
                     Object.defineProperty(obj, key, {
                         get: () => {
                             if (
-                                NoReact.target &&
-                                watchers.indexOf(NoReact.target)
+                                React.target &&
+                                watchers.indexOf(React.target)
                             ) {
-                                watchers.push(NoReact.target);
+                                watchers.push(React.target);
                             }
                             return value;
                         },
@@ -307,15 +308,4 @@ export abstract class MVVM<T> {
 }
 export interface MVVMConstructor<T> {
     new(params: T): MVVM<T>;
-}
-
-let reactiveCache: any = {};
-export function Reactive(proto, propertyName) {
-    if (!proto.$symbol) {
-        proto.$symbol = Symbol();
-    }
-    if (!reactiveCache[proto.$symbol]) {
-        reactiveCache[proto.$symbol] = [];
-    }
-    reactiveCache[proto.$symbol].push(propertyName);
 }

@@ -1,80 +1,46 @@
-const path = require("path");
+const path = require('path');
 const ManifestPlugin = require('webpack-manifest-plugin');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
-const webpack=require("webpack");
-const config=require("./app.json");
+const webpack = require('webpack');
 
-let plugins=[
+let plugins = [
     new ManifestPlugin(),
     new webpack.NamedModulesPlugin(),
-    new CleanWebpackPlugin(['bundle'])
+    new CleanWebpackPlugin(['dist'])
 ];
 
 module.exports = {
-    mode:"development",
+    mode: 'development',
     entry: {
-        "bootstrap": path.resolve(__dirname,"www/"+"bootstrap.ts")
+        index: path.resolve(__dirname, 'src/' + 'index.ts')
     },
     devtool: 'source-map',
     resolve: {
-        extensions: ['.ts','.tsx','.js'],
-        modules:[path.resolve(__dirname,'node_modules')]
+        extensions: ['.ts', '.tsx', '.js']
     },
-    
+
     module: {
-        rules: [{
-            test: /\.tsx?$/,
-            use: [{
-                loader: "ts-loader",
-                options:{
-                    compilerOptions:{
-                        "target": "ES5",
-                        "module": "esnext"
-                    },
-                    onlyCompileBundledFiles:true
-                }
-            },{
-                loader:"stylename-loader"
-            }],
-            include:path.resolve(__dirname,"www")
-        },{
-            test:/\.scss/,
-            use:[
+        rules: [
             {
-                loader:"css-loader"
-            },
-            {
-                loader:"sass-loader"
-            }],
-            include:path.resolve(__dirname,"www")
-        },{
-            test:/\.((ttf)|(woff2)|(woff)|(eot)|(svg))$/,
-            use:[{
-                loader:"url-loader",
-                options:{
-                    limit: 8192,
-                    name: '[name].[ext]'
-                }
-            }],
-            include:path.resolve(__dirname,"www")
-        }]
-    },
-    resolveLoader:{
-        modules:["node_modules",path.resolve(__dirname,"dist/www/loaders")]
+                test: /\.tsx?$/,
+                use: [
+                    {
+                        loader: 'ts-loader',
+                        options: {
+                            compilerOptions: {
+                                target: 'ES5'
+                            },
+                            onlyCompileBundledFiles: true
+                        }
+                    }
+                ]
+            }
+        ]
     },
     output: {
-        filename: "[name].js",
-        path: path.resolve(__dirname,"bundle"),
-        chunkFilename: '[name].bundle.js',
-        publicPath:"static/"
+        filename: '[name].js',
+        path: path.resolve(__dirname, 'dist')
     },
     plugins: plugins,
-    devServer: {
-        historyApiFallback: true,
-        hot:true,
-        stats: { colors: true },
-        host:config.webpack_host,
-        port:config.webpack_port
-    },
-    stats:"normal"
-}
+    stats: 'normal'
+};

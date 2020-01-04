@@ -1,4 +1,4 @@
-import { NoReact, MVVM, VNode } from "../src"
+import { React, MVVM, VNode } from "../src"
 export class Simple extends MVVM<{ rendered?: Function }>{
     protected Render(): VNode {
         return <h1 onClick={this.changeName}>this is simple</h1>;

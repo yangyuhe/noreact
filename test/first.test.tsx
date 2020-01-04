@@ -1,4 +1,4 @@
-import { VNode, NoReact } from "../src";
+import { VNode, React } from "../src";
 import { Simple } from "./mvvms";
 
 describe('VNode', () => {
