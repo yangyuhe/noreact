@@ -8,5 +8,6 @@ declare global {
             ref?: any;
             key?: any;
         }
+        type Element = import("./src/VNode").VNode
     }
 }
