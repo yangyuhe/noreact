@@ -1,13 +1,14 @@
 import { React, MVVM, VNode } from "../src";
 import "./style.scss";
-
-namespace JSX {
-    interface IntrinsicElements {
-        [elemName: string]: any;
-    }
-    interface IntrinsicAttributes {
-        ref?: any;
-        key?: any;
+declare global {
+    namespace JSX {
+        interface IntrinsicElements {
+            [elemName: string]: any;
+        }
+        interface IntrinsicAttributes {
+            ref?: any;
+            key?: any;
+        }
     }
 }
 
@@ -24,21 +25,21 @@ class TodoList extends MVVM<void> {
         </div>
     }
     onRendered() {
-        this.$on<number>("delete", id => {
+        this.$on("delete", id => {
             this.list = this.list.filter(item => item.id != id);
         });
-        this.$on<number>("edit", id => {
+        this.$on("edit", id => {
             let item = this.list.find(item => item.id == id);
             this.editTarget = item;
             this.showpop = true;
         });
-        this.$on<number>("move down", id => {
+        this.$on("move down", id => {
             let index = this.list.findIndex(item => item.id == id);
             if (index > -1 && index < this.list.length - 1) {
                 [this.list[index], this.list[index + 1]] = [this.list[index + 1], this.list[index]];
             }
         });
-        this.$on<number>("move up", id => {
+        this.$on("move up", id => {
             let index = this.list.findIndex(item => item.id == id);
             if (index > -1 && index > 0) {
                 [this.list[index - 1], this.list[index]] = [this.list[index], this.list[index - 1]];
@@ -135,9 +136,6 @@ class Add extends MVVM<{ onAdd: (content: string, time: string, id: number) => v
     cancel() {
         this.$emitUp("close")
     }
-}
-class About {
-
 }
 document.addEventListener("DOMContentLoaded", () => {
     let about = new TodoList();

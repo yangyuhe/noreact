@@ -42,7 +42,6 @@ module.exports = {
                         loader: 'ts-loader',
                         options: {
                             compilerOptions: {
-                                module: 'esnext',
                                 target: 'ES5'
                             },
                             onlyCompileBundledFiles: true

@@ -34,24 +34,24 @@ export abstract class MVVM<T> {
     protected abstract Render(): VNode;
 
     /**向所有父级发送消息 */
-    protected $emitUp<Message>(event: string, data?: Message) {
+    protected $emitUp(event: string, data?: any) {
         this.$root.EmitUp(event, data, this);
     }
     /**向所有子级发送消息 */
-    protected $emitDown<Message>(event: string, data?: Message) {
+    protected $emitDown(event: string, data?: any) {
         this.$root.EmitDown(event, data, this);
     }
     /**监听事件 */
-    protected $on<Message>(
+    protected $on(
         event: string,
-        callback: (data: Message, target: MVVM<any>) => void
+        callback: (data: any, target: MVVM<any>) => void
     ) {
         if (!this.$eventRegister[event]) this.$eventRegister[event] = [];
         this.$eventRegister[event].push(callback);
         RegisterEvent(event, callback);
     }
     /**发送一个全局事件 */
-    protected $broadcast<Message>(event: string, data?: Message) {
+    protected $broadcast(event: string, data?: any) {
         TriggerEvent(event, this, data);
     }
     /**触发该组件的某个事件监听 */
@@ -64,8 +64,9 @@ export abstract class MVVM<T> {
     $ToDom(): (HTMLElement | Text)[] {
         this.hasRenderedDom = true;
         if (!this.$root) this.$DoRender();
-        let dom = this.$root.ToDom();
-        return dom;
+        let doms = this.$root.ToDom();
+        this.$attachedVNode.SetDom(doms);
+        return doms;
     }
     $ToHtml(): string {
         return this.Render().ToHtml();

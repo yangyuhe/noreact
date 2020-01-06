@@ -65,7 +65,7 @@ export class VNode {
                     sibling.parentNode.insertBefore(dom, sibling);
                 });
             } else {
-                let top = this.getDomUpward();
+                let top = this.doms.length > 1 ? this.doms[0].parentNode : this.doms[0];
                 doms.forEach(dom => {
                     top.appendChild(dom);
                 });
@@ -75,19 +75,6 @@ export class VNode {
         //虚拟dom操作
         this.children.splice(index, 0, child);
         child.parent = this;
-    }
-    private getDomUpward(): HTMLElement | Text {
-        if (this.type == 'standard') {
-            if (this.tag == 'fragment') {
-                return this.parent.getDomUpward();
-            } else {
-                return this.doms && this.doms[0];
-            }
-        }
-        if (this.type == 'custom') {
-            return this.parent.getDomUpward();
-        }
-        throw new Error('getDomUpward error');
     }
     /**末尾添加一个孩子节点，不包含dom操作 */
     AppendChild(child: VNode) {
@@ -339,5 +326,8 @@ export class VNode {
                 dom.addEventListener(eventName, this.attrs[key]);
             }
         });
+    }
+    SetDom(doms: (HTMLElement | Text)[]) {
+        this.doms = doms;
     }
 }
