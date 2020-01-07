@@ -2,9 +2,6 @@ import { React, MVVM, VNode } from "../src";
 import "./style.scss";
 declare global {
     namespace JSX {
-        interface IntrinsicElements {
-            [elemName: string]: any;
-        }
         interface IntrinsicAttributes {
             ref?: any;
             key?: any;

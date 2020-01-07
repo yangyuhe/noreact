@@ -30,6 +30,9 @@ class UserCenter extends MVVM<{}>{
     onInit() {
         this.person = person;
     }
+    onDestroyed() {
+        console.log("user destroyed")
+    }
     Render() {
         return <fragment>
             <h1>User Center</h1>

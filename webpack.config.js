@@ -2,14 +2,14 @@ const path = require('path');
 const ManifestPlugin = require('webpack-manifest-plugin');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 const webpack = require('webpack');
+const merge = require('webpack-merge');
 
 let plugins = [
     new ManifestPlugin(),
     new webpack.NamedModulesPlugin(),
     new CleanWebpackPlugin(['dist'])
 ];
-
-module.exports = {
+let common = {
     mode: 'development',
     entry: {
         index: path.resolve(__dirname, 'src/' + 'index.ts')
@@ -45,3 +45,18 @@ module.exports = {
     plugins: plugins,
     stats: 'normal'
 };
+let umd = merge(common, {
+    output: {
+        filename: '[name].js',
+        library: 'noreact',
+        libraryTarget: 'umd'
+    }
+});
+let umd_prod = merge(umd, {
+    mode: 'production',
+    output: {
+        filename: '[name].min.js'
+    }
+});
+
+module.exports = [umd, umd_prod];
