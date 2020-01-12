@@ -14,10 +14,10 @@ class Person {
 let person = new Person("foo", 0);
 class PersonCard extends MVVM<{}>{
     person: Person = null;
-    onInit() {
+    $onInit() {
         this.person = person;
     }
-    Render() {
+    $Render() {
         return <fragment>
             <h1>Person Card</h1>
             <div>{this.person.name}</div>
@@ -27,13 +27,13 @@ class PersonCard extends MVVM<{}>{
 }
 class UserCenter extends MVVM<{}>{
     person: Person = null;
-    onInit() {
+    $onInit() {
         this.person = person;
     }
-    onDestroyed() {
+    $onDestroyed() {
         console.log("user destroyed")
     }
-    Render() {
+    $Render() {
         return <fragment>
             <h1>User Center</h1>
             <div>Name:{this.person.name}</div>
@@ -43,10 +43,10 @@ class UserCenter extends MVVM<{}>{
 }
 class Operation extends MVVM<{}>{
     person: Person = null;
-    onInit() {
+    $onInit() {
         this.person = person;
     }
-    Render() {
+    $Render() {
         return <fragment>
             <button onClick={this.person.changeName.bind(person)}>change name</button>
             <button onClick={this.person.changeAge.bind(person)}>change age</button>
@@ -55,7 +55,7 @@ class Operation extends MVVM<{}>{
 }
 class Tabs extends MVVM<void>{
     curTab = 'oper';
-    Render() {
+    $Render() {
         return <div className="tabs-container">
             <div className="tabs">
                 <button onClick={this.tab.bind(this, 'oper')} className="tab">oper</button>
@@ -74,5 +74,5 @@ class Tabs extends MVVM<void>{
 document.addEventListener("DOMContentLoaded", () => {
     let tabs = new Tabs();
     (window as any).noreact = tabs;
-    document.body.append(...tabs.$ToDom());
+    tabs.$AppendTo(document.body);
 });

@@ -20,6 +20,8 @@ export class VNode {
     private type: 'standard' | 'custom' | 'text';
     /**是否已经被销毁 */
     private isDestroyed = false;
+    /**是否是多dom节点 */
+    isMulti: boolean = false;
 
     constructor(type: 'standard' | 'custom' | 'text') {
         this.type = type;
@@ -45,41 +47,49 @@ export class VNode {
     GetParent() {
         return this.parent;
     }
-    /**在索引为index位置增加一个child,index=-1表示在末尾添加，注意会引发实际的dom操作 */
-    InsertVNode(child: VNode, index: number) {
-        //dom操作
-        let doms = child.GetDom();
-        if (doms && doms.length > 0) {
-            let sibling: HTMLElement | Text = null;
-            while (this.children[index]) {
-                let subdoms = this.children[index].GetDom();
-                if (subdoms.length > 0) {
-                    sibling = subdoms[0];
-                    break;
-                } else {
-                    index++;
-                }
-            }
-            if (sibling) {
-                doms.forEach(dom => {
-                    sibling.parentNode.insertBefore(dom, sibling);
-                });
+    /**在索引为index位置增加一个child,注意会引发实际的dom操作 */
+    InsertVNode(child: VNode, index: number, domchange: boolean) {
+        //虚拟dom操作
+        let oldNode = this.children[index];
+        this.children.splice(index, 0, child);
+        child.parent = this;
+        if (domchange) {
+            let res = this.GetSiblingDom(child);
+            let doms = child.GetDom();
+            if (res.isparent) {
+                (res.dom as HTMLElement).append(...doms);
             } else {
-                let top = this.doms.length > 1 ? this.doms[0].parentNode : this.doms[0];
                 doms.forEach(dom => {
-                    top.appendChild(dom);
+                    res.dom.parentNode.insertBefore(dom, res.dom);
+                });
+            }
+            if (this.tag == 'fragment') {
+                this.doms = [];
+                this.children.forEach(child => {
+                    this.doms = this.doms.concat(child.GetDom());
                 });
             }
         }
-
-        //虚拟dom操作
-        this.children.splice(index, 0, child);
-        child.parent = this;
     }
-    /**末尾添加一个孩子节点，不包含dom操作 */
-    AppendChild(child: VNode) {
-        child.parent = this;
-        this.children.push(child);
+    //child是当前节点的子节点，获取child的dom，如果没有就找child后的相邻节点的dom，如果都没有就返回父节点
+    GetSiblingDom(child: VNode): { dom: HTMLElement | Text, isparent: boolean } {
+        if (this.type == 'custom') {
+            if (this.parent)
+                return this.parent.GetSiblingDom(this);
+            return { dom: this.mvvm.$GetMountDom(), isparent: true };
+        }
+        let index = this.children.indexOf(child);
+        index++;
+        while (index < this.children.length) {
+            let child = this.children[index];
+            let doms = child.GetDom();
+            if (doms.length > 0)
+                return { dom: doms[0], isparent: false };
+            index++;
+        }
+        if (this.isMulti)
+            return this.parent.GetSiblingDom(this);
+        return { dom: this.doms[0], isparent: true };
     }
     /**移除一个孩子节点，注意会引发dom操作 */
     RemoveVNode(child: VNode, index: number, domchange: boolean = true) {
@@ -90,7 +100,19 @@ export class VNode {
                 doms.forEach(dom => {
                     dom.parentNode.removeChild(dom);
                 });
+            if (this.tag == 'fragment') {
+                this.doms = [];
+                this.children.forEach(child => {
+                    this.doms = this.doms.concat(child.GetDom());
+                });
+            }
         }
+    }
+    SetChildren(children: VNode[]) {
+        children.forEach(child => {
+            child.parent = this;
+        });
+        this.children = children;
     }
     IsDestroyed() {
         return this.isDestroyed;
@@ -116,7 +138,9 @@ export class VNode {
             });
         }
     }
-    GetDom() {
+    GetDom(): (HTMLElement | Text)[] {
+        if (this.type == 'custom')
+            return this.mvvm.$GetRoot().GetDom();
         return this.doms;
     }
     GetRef(name: string): VNode {
@@ -263,12 +287,8 @@ export class VNode {
         }
     }
     ToDom(): (HTMLElement | Text)[] {
-        if (typeof document == 'undefined') {
-            return null;
-        }
         if (this.type == 'custom') {
             let doms = this.mvvm.$ToDom();
-            this.doms = doms;
             return doms;
         }
         if (this.type == 'standard') {
@@ -326,8 +346,5 @@ export class VNode {
                 dom.addEventListener(eventName, this.attrs[key]);
             }
         });
-    }
-    SetDom(doms: (HTMLElement | Text)[]) {
-        this.doms = doms;
     }
 }

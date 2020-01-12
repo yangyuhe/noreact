@@ -16,22 +16,24 @@ export abstract class MVVM<T> {
     private $isdirty = false;
     private $refs: { [key: string]: VNode } = {};
     protected $props: T;
-    private hasRenderedDom = false;
+    private $hasRenderedDom = false;
+    private $mountDom: HTMLElement = null;
+    private $isDestroyed = false;
 
     constructor($props: T) {
         if (toString.call($props) == '[object Object]') {
             this.$props = $props;
-            this.watchObject(this.$props);
+            this.$watchObject(this.$props);
         }
     }
     /**初始化函数 */
-    protected onInit(): void { }
+    protected $onInit(): void { }
     /**渲染完成后该方法会被调用，此时elem成员变量才可以被访问到 */
-    protected onRendered(): void { }
+    protected $onRendered(): void { }
     /**销毁函数 */
-    protected onDestroyed(): void { }
+    protected $onDestroyed(): void { }
     /**该组建的渲染方法，该方法必须返回一个虚拟树 */
-    protected abstract Render(): VNode;
+    protected abstract $Render(): VNode;
 
     /**向所有父级发送消息 */
     protected $emitUp(event: string, data?: any) {
@@ -62,14 +64,13 @@ export abstract class MVVM<T> {
         }
     }
     $ToDom(): (HTMLElement | Text)[] {
-        this.hasRenderedDom = true;
+        this.$hasRenderedDom = true;
         if (!this.$root) this.$DoRender();
         let doms = this.$root.ToDom();
-        this.$attachedVNode.SetDom(doms);
         return doms;
     }
     $ToHtml(): string {
-        return this.Render().ToHtml();
+        return this.$Render().ToHtml();
     }
     $GetRoot() {
         if (!this.$root) this.$DoRender();
@@ -92,11 +93,34 @@ export abstract class MVVM<T> {
 
             let old = React.target;
             React.target = this;
-            let newroot = this.Render();
+            let newroot = this.$Render();
             React.target = old;
 
             React.ChangeMode('deep');
-            this.$diff([this.$root], [newroot], this.$root.GetParent());
+            let same = MVVM.$compareVNode(this.$root, newroot);
+            if (same)
+                this.$useOld(this.$root, newroot);
+            else {
+                if (this.$hasRenderedDom) {
+                    let doms = newroot.ToDom();
+                    let res = this.$root.GetParent().GetSiblingDom(this.$root);
+                    if (res.isparent) {
+                        (res.dom as HTMLElement).append(...doms);
+                    } else {
+                        doms.forEach(dom => {
+                            res.dom.parentNode.insertBefore(dom, res.dom);
+                        });
+                    }
+                    this.$root.GetDom().forEach(dom => {
+                        dom.remove();
+                    });
+                }
+                this.$root.GetParent().isMulti = newroot.isMulti;
+                newroot.SetParent(this.$root.GetParent());
+                this.$root = newroot;
+                if (this.$hasRenderedDom)
+                    newroot.Rendered();
+            }
             this.$isdirty = false;
         }
     }
@@ -118,25 +142,26 @@ export abstract class MVVM<T> {
             return ref.GetDom() && res.GetDom()[0] as HTMLElement;
     }
     $DoRender() {
-        this.onInit();
+        this.$onInit();
         let keys = [];
         Object.keys(this).forEach(key => {
             if (!key.startsWith('$')) keys.push(key);
         });
-        keys.length > 0 && this.watchObject(this, keys);
+        keys.length > 0 && this.$watchObject(this, keys);
 
         let old = React.target;
         React.target = this;
-        this.$root = this.Render();
+        this.$root = this.$Render();
         if (!this.$attachedVNode) {
             this.$attachedVNode = new VNode("custom");
             this.$attachedVNode.SetMvvm(this);
         }
+        this.$attachedVNode.isMulti = this.$root.isMulti;
         this.$root.SetParent(this.$attachedVNode);
         React.target = old;
         return this.$root;
     }
-    private watchObject(obj: any, keys?: string[]) {
+    private $watchObject(obj: any, keys?: string[]) {
         if (toString.call(obj) == '[object Object]' || toString.call(obj) == '[object Array]') {
             let watchers: MVVM<any>[] = [];
             ((keys && keys.length > 0 && keys) || Object.keys(obj)).forEach(key => {
@@ -159,29 +184,29 @@ export abstract class MVVM<T> {
                                 value = val;
 
                                 if (toString.call(value) == "[object Array]")
-                                    this.watchArray(value, watchers);
-                                this.watchObject(value);
+                                    this.$watchArray(value, watchers);
+                                this.$watchObject(value);
                             }
                         },
                         configurable: false,
                         enumerable: true
                     });
                     if (toString.call(value) == "[object Array]")
-                        this.watchArray(value, watchers);
-                    this.watchObject(value);
+                        this.$watchArray(value, watchers);
+                    this.$watchObject(value);
                 }
             });
             return;
         }
     }
-    private watchArray(arr, watchers: MVVM<any>[]) {
-        this.overwriteArrayMethods(arr, 'pop', watchers);
-        this.overwriteArrayMethods(arr, 'push', watchers);
-        this.overwriteArrayMethods(arr, 'splice', watchers);
-        this.overwriteArrayMethods(arr, 'unshift', watchers);
-        this.overwriteArrayMethods(arr, 'shift', watchers);
+    private $watchArray(arr, watchers: MVVM<any>[]) {
+        this.$overwriteArrayMethods(arr, 'pop', watchers);
+        this.$overwriteArrayMethods(arr, 'push', watchers);
+        this.$overwriteArrayMethods(arr, 'splice', watchers);
+        this.$overwriteArrayMethods(arr, 'unshift', watchers);
+        this.$overwriteArrayMethods(arr, 'shift', watchers);
     }
-    private overwriteArrayMethods(arr: any[], methodname: string, watchers: MVVM<any>[]) {
+    private $overwriteArrayMethods(arr: any[], methodname: string, watchers: MVVM<any>[]) {
         let method = arr[methodname];
         if (typeof method == 'function') {
             Object.defineProperty(arr, methodname, {
@@ -193,13 +218,13 @@ export abstract class MVVM<T> {
             });
         }
     }
-    private useOld(oldNode: VNode, newNode: VNode) {
+    private $useOld(oldNode: VNode, newNode: VNode) {
         if (oldNode.GetType() == 'custom') {
             let instance = oldNode.GetInstance();
             let newInstance = newNode.GetInstance();
             if (instance.$isdirty) {
                 instance.$props = newInstance.$props;
-                instance.watchObject(instance.$props);
+                instance.$watchObject(instance.$props);
                 instance.$ApplyRefresh();
             } else {
                 Object.assign(
@@ -229,43 +254,43 @@ export abstract class MVVM<T> {
         opers.forEach(item => {
             if (item.state == 'old') {
                 index++;
-                this.useOld(item.oldValue, item.newValue);
+                this.$useOld(item.oldValue, item.newValue);
                 return;
             }
             if (item.state == 'new') {
                 if (item.newValueOrigin) {
-                    this.useOld(item.newValueOrigin, item.newValue);
-                    parent.InsertVNode(item.newValueOrigin, index);
+                    this.$useOld(item.newValueOrigin, item.newValue);
+                    parent.InsertVNode(item.newValueOrigin, index, this.$hasRenderedDom);
                 } else {
-                    if (this.hasRenderedDom)
+                    if (this.$hasRenderedDom)
                         item.newValue.ToDom();
-                    parent.InsertVNode(item.newValue, index);
-                    if (this.hasRenderedDom)
+                    parent.InsertVNode(item.newValue, index, this.$hasRenderedDom);
+                    if (this.$hasRenderedDom)
                         item.newValue.Rendered();
                 }
                 index++;
                 return;
             }
             if (item.state == 'delete') {
-                parent.RemoveVNode(item.oldValue, index, item.isdeprecated);
+                parent.RemoveVNode(item.oldValue, index, this.$hasRenderedDom && item.isdeprecated);
                 if (item.isdeprecated) {
                     item.oldValue.Destroy();
                 }
                 return;
             }
             if (item.state == 'replace') {
-                parent.RemoveVNode(item.oldValue, index, item.isdeprecated);
+                parent.RemoveVNode(item.oldValue, index, this.$hasRenderedDom && item.isdeprecated);
                 if (item.isdeprecated) {
                     item.oldValue.Destroy();
                 }
                 if (item.newValueOrigin) {
-                    this.useOld(item.newValueOrigin, item.newValue);
-                    parent.InsertVNode(item.newValueOrigin, index);
+                    this.$useOld(item.newValueOrigin, item.newValue);
+                    parent.InsertVNode(item.newValueOrigin, index, this.$hasRenderedDom);
                 } else {
-                    if (this.hasRenderedDom)
+                    if (this.$hasRenderedDom)
                         item.newValue.ToDom();
-                    parent.InsertVNode(item.newValue, index);
-                    if (this.hasRenderedDom)
+                    parent.InsertVNode(item.newValue, index, this.$hasRenderedDom);
+                    if (this.$hasRenderedDom)
                         item.newValue.Rendered();
                 }
                 index++;
@@ -274,14 +299,32 @@ export abstract class MVVM<T> {
     }
     $Rendered() {
         this.$root.Rendered();
-        this.onRendered();
+        this.$onRendered();
     }
     $Destroy() {
-        this.onDestroyed();
+        this.$isDestroyed = true;
+        this.$onDestroyed();
         this.$root.Destroy();
+    }
+    $IsDestroyed() {
+        return this.$isDestroyed;
     }
     $AttachVNode(vnode: VNode) {
         this.$attachedVNode = vnode;
+    }
+    $AppendTo(elem: string | HTMLElement) {
+        let dom: HTMLElement;
+        if (typeof elem == 'string') {
+            dom = document.querySelector(elem);
+        } else {
+            dom = elem;
+        }
+        dom.append(...this.$ToDom());
+        this.$mountDom = dom;
+        this.$Rendered();
+    }
+    $GetMountDom() {
+        return this.$mountDom;
     }
     static $compareVNode(left: VNode, right: VNode) {
         if (left.GetAttr('key') != right.GetAttr('key')) {

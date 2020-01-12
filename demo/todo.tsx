@@ -14,14 +14,14 @@ class TodoList extends MVVM<void> {
     private generate = 0;
     private showpop = false;
     private editTarget = null;
-    protected Render(): VNode {
+    protected $Render(): VNode {
         return <div class="todolist">
             {this.list.map(item => <ToDoItem key={item.id} id={item.id} content={item.content} time={item.time}></ToDoItem>)}
             <button class="button add" onClick={this.add.bind(this)}>add</button>
             {this.showpop ? <Add onAdd={this.onadd.bind(this)} editItem={this.editTarget}></Add> : null}
         </div>
     }
-    onRendered() {
+    $onRendered() {
         this.$on("delete", id => {
             this.list = this.list.filter(item => item.id != id);
         });
@@ -70,7 +70,7 @@ class TodoList extends MVVM<void> {
 
 class ToDoItem extends MVVM<ITodoItem> {
     private counter: number = 0;
-    protected Render(): VNode {
+    protected $Render(): VNode {
         return <div className="todo-item">
             <div className="todo-content">
                 <div className="todo-time">{this.$props.time} |counter:{this.counter}</div>
@@ -85,7 +85,7 @@ class ToDoItem extends MVVM<ITodoItem> {
             </div>
         </div>
     }
-    onInit() {
+    $onInit() {
         setInterval(() => {
             this.counter++;
         }, 1000);
@@ -102,13 +102,13 @@ interface ITodoItem {
 class Add extends MVVM<{ onAdd: (content: string, time: string, id: number) => void, editItem: ITodoItem }>{
     cotent: string = "";
     time: string = "";
-    onInit() {
+    $onInit() {
         if (this.$props.editItem) {
             this.cotent = this.$props.editItem.content;
             this.time = this.$props.editItem.time;
         }
     }
-    protected Render(): VNode {
+    protected $Render(): VNode {
         return <fragment>
             <div className="pop-mask"></div>
             <div className="pop">
@@ -137,7 +137,5 @@ class Add extends MVVM<{ onAdd: (content: string, time: string, id: number) => v
 document.addEventListener("DOMContentLoaded", () => {
     let about = new TodoList();
     (window as any).noreact = about;
-    let dom = about.$ToDom();
-    document.body.append(dom[0]);
-    about.$Rendered();
+    about.$AppendTo(document.body);
 });

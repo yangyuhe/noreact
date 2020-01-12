@@ -9,7 +9,7 @@ declare global {
 }
 class Test extends MVVM<void>{
     list = [{ name: "a" }, { name: 'b' }];
-    Render() {
+    $Render() {
         return <ul className="container">
             {this.list.map(item => <li key={item.name} class={item.name}>{item.name}</li>)}
         </ul>
@@ -22,14 +22,14 @@ class Test extends MVVM<void>{
     }
 }
 class Item extends MVVM<{}>{
-    Render() {
+    $Render() {
         return <li></li>;
     }
 }
 class List extends MVVM<void>{
     list = [1, 2];
     counter = 3;
-    Render() {
+    $Render() {
         return <div>
             {this.list.map(item => <Item key={item}></Item>)}
         </div>

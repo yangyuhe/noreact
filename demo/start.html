@@ -6,7 +6,10 @@
         <meta http-equiv="X-UA-Compatible" content="ie=edge" />
         <title>simple start</title>
         <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-        <script src="https://raw.githubusercontent.com/yangyuhe/noreact/master/dist/index.js"></script>
+        <script
+            crossorigin
+            src="https://raw.githubusercontent.com/yangyuhe/noreact/master/dist/index.js"
+        ></script>
         <script type="text/babel">
             var React = noreact.React;
             class Person extends noreact.MVVM {
@@ -38,7 +41,7 @@
                 }
             }
             let person = new Person();
-            document.body.append(...person.$ToDom());
+            person.$AppendTo(document.body);
         </script>
     </head>
     <body></body>

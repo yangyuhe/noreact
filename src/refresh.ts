@@ -1,7 +1,7 @@
 import { MVVM } from './MVVM';
 
 let queue: MVVM<any>[] = [];
-let tempQueue = [];
+let tempQueue: MVVM<any>[] = [];
 let maxLoop = 10;
 let counter = 0;
 
@@ -31,7 +31,8 @@ function Refresh() {
         }
         counter++;
         tempQueue.forEach(root => {
-            root.$ApplyRefresh();
+            if (!root.$IsDestroyed())
+                root.$ApplyRefresh();
         });
         if (queue.length == 0)
             break;

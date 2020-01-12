@@ -23,6 +23,10 @@ class React {
         if (typeof Elem == 'string') {
             let vnode: VNode = new VNode('standard');
             vnode.SetTag(Elem);
+            if (Elem == 'fragment')
+                vnode.isMulti = true;
+            else
+                vnode.isMulti = false;
             if (!isInBrowser()) {
                 vnode.SetAttr(VNODE_ID, this.counter);
                 this.counter++;
@@ -33,9 +37,7 @@ class React {
                     vnode.SetAttr(key, attrs[key]);
                 }
             }
-            allchildren.forEach(child => {
-                vnode.AppendChild(child);
-            });
+            vnode.SetChildren(allchildren);
             return vnode;
         } else {
             let vnode = new VNode('custom');
@@ -50,7 +52,8 @@ class React {
             mvvm.$SetChildren(allchildren);
             mvvm.$AttachVNode(vnode);
             if (this.mode == 'deep') {
-                mvvm.$DoRender();
+                let root = mvvm.$DoRender();
+                vnode.isMulti = root.isMulti;
             }
 
             if (attrs != null) {

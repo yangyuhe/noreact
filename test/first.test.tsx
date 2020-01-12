@@ -40,27 +40,6 @@ describe('VNode', () => {
         expect(foo.ToHtml()).toBe('<div><h1>this is simple</h1></div>');
     });
 
-    test('VNode Destroy', () => {
-        let simple: VNode = <Simple>
-            <h1>h1</h1>
-            <h2>h2</h2>
-        </Simple>;
-        expect(simple.GetChildren().length).toBe(2);
-        expect(simple.GetChildren()[1].GetTag()).toBe("h2");
-    });
-
-    test('VNode AppendChild', () => {
-        let f: VNode = <fragment>
-            <div>foo</div>
-            <span>bar</span>
-        </fragment>;
-        let h = <h1>foo</h1>;
-        expect(f.GetChildren().length).toBe(2);
-        f.AppendChild(h);
-        expect(f.GetChildren().length).toBe(3);
-        expect(h.GetParent()).toBe(f);
-    });
-
     test('VNode ToDom', () => {
         let foo: VNode = <div>
             <Simple></Simple>
