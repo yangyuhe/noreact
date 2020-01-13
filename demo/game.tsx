@@ -70,9 +70,9 @@ class TestItem extends MVVM<{}>{
     time = new Date();
     protected $Render(): VNode {
         console.log("render...")
-        return <fragment>
+        return <React.Fragment>
             {this.time}
-        </fragment>
+        </React.Fragment>
     }
     $onInit() {
         setInterval(() => {

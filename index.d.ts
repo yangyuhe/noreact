@@ -9,6 +9,6 @@ declare global {
             key?: any;
         }
         type Element = import("./src/VNode").VNode
-        type ElementClass = import("./src/MVVM").MVVM<any>
+        type ElementClass = import("./src/MVVM").MVVM<any> | import("./src/react").Fragment
     }
 }

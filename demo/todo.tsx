@@ -109,7 +109,7 @@ class Add extends MVVM<{ onAdd: (content: string, time: string, id: number) => v
         }
     }
     protected $Render(): VNode {
-        return <fragment>
+        return <React.Fragment>
             <div className="pop-mask"></div>
             <div className="pop">
                 <div className="add-todo">
@@ -120,7 +120,7 @@ class Add extends MVVM<{ onAdd: (content: string, time: string, id: number) => v
                     <button onClick={this.onadd.bind(this)}>ok</button>
                 </div>
             </div>
-        </fragment>
+        </React.Fragment>
     }
     onadd() {
         this.$props.onAdd(this.cotent, this.time, this.$props.editItem == null ? null : this.$props.editItem.id);

@@ -18,10 +18,10 @@ class PersonCard extends MVVM<{}>{
         this.person = person;
     }
     $Render() {
-        return <fragment>
+        return <React.Fragment>
             <h1>Person Card</h1>
             <div>{this.person.name}</div>
-        </fragment>
+        </React.Fragment>
 
     }
 }
@@ -34,11 +34,11 @@ class UserCenter extends MVVM<{}>{
         console.log("user destroyed")
     }
     $Render() {
-        return <fragment>
+        return <React.Fragment>
             <h1>User Center</h1>
             <div>Name:{this.person.name}</div>
             <div>Age:{this.person.age}</div>
-        </fragment>
+        </React.Fragment>
     }
 }
 class Operation extends MVVM<{}>{
@@ -47,10 +47,10 @@ class Operation extends MVVM<{}>{
         this.person = person;
     }
     $Render() {
-        return <fragment>
+        return <React.Fragment>
             <button onClick={this.person.changeName.bind(person)}>change name</button>
             <button onClick={this.person.changeAge.bind(person)}>change age</button>
-        </fragment>
+        </React.Fragment>
     }
 }
 class Tabs extends MVVM<void>{

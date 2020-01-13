@@ -234,7 +234,7 @@ export abstract class MVVM<T> {
             }
             return;
         }
-        if (oldNode.GetType() == 'standard') {
+        if (oldNode.GetType() == 'standard' || oldNode.GetType() == 'fragment') {
             oldNode.ApplyAttrDiff(newNode.GetAttrs());
             this.$diff(
                 oldNode.GetChildren(),

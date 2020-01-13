@@ -9,11 +9,12 @@ class React {
     private counter = 0;
     private mode: 'deep' | 'shallow' = 'deep';
     public target: MVVM<any>;
+    Fragment = Fragment;
     ResetCounter() {
         this.counter = 0;
     }
     createElement(
-        Elem: string | MVVMConstructor<any>,
+        Elem: string | (typeof MVVM) | typeof Fragment,
         attrs: { [key: string]: any },
         ...children: (VNode | VNode[] | string)[]
     ): VNode {
@@ -23,10 +24,7 @@ class React {
         if (typeof Elem == 'string') {
             let vnode: VNode = new VNode('standard');
             vnode.SetTag(Elem);
-            if (Elem == 'fragment')
-                vnode.isMulti = true;
-            else
-                vnode.isMulti = false;
+            vnode.isMulti = false;
             if (!isInBrowser()) {
                 vnode.SetAttr(VNODE_ID, this.counter);
                 this.counter++;
@@ -39,14 +37,30 @@ class React {
             }
             vnode.SetChildren(allchildren);
             return vnode;
-        } else {
+        }
+        if (Elem == this.Fragment) {
+            let vnode: VNode = new VNode('fragment');
+            vnode.isMulti = true;
+            if (!isInBrowser()) {
+                vnode.SetAttr(VNODE_ID, this.counter);
+                this.counter++;
+            }
+            vnode.SetChildren(allchildren);
+            if (attrs != null) {
+                for (let key in attrs) {
+                    vnode.SetAttr(key, attrs[key]);
+                }
+            }
+            return vnode;
+        }
+        if ((Elem as Function).prototype instanceof MVVM) {
             let vnode = new VNode('custom');
             if (!isInBrowser()) {
                 vnode.SetAttr(VNODE_ID, this.counter);
                 this.counter++;
             }
 
-            let mvvm = new Elem(attrs);
+            let mvvm = new (Elem as any)(attrs) as MVVM<any>;
 
             vnode.SetMvvm(mvvm);
             mvvm.$SetChildren(allchildren);
@@ -91,5 +105,8 @@ class React {
     ChangeMode(mode: 'shallow' | 'deep') {
         this.mode = mode;
     }
+}
+export class Fragment {
+
 }
 export default new React();

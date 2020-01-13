@@ -17,13 +17,13 @@ export class VNode {
     /**关联的实际dom元素 */
     private doms: (HTMLElement | Text)[];
     /**节点类型 */
-    private type: 'standard' | 'custom' | 'text';
+    private type: 'standard' | 'custom' | 'text' | 'fragment';
     /**是否已经被销毁 */
     private isDestroyed = false;
     /**是否是多dom节点 */
     isMulti: boolean = false;
 
-    constructor(type: 'standard' | 'custom' | 'text') {
+    constructor(type: 'standard' | 'custom' | 'text' | 'fragment') {
         this.type = type;
     }
     SetTag(tag: string) {
@@ -63,7 +63,7 @@ export class VNode {
                     res.dom.parentNode.insertBefore(dom, res.dom);
                 });
             }
-            if (this.tag == 'fragment') {
+            if (this.type == 'fragment') {
                 this.doms = [];
                 this.children.forEach(child => {
                     this.doms = this.doms.concat(child.GetDom());
@@ -100,7 +100,7 @@ export class VNode {
                 doms.forEach(dom => {
                     dom.parentNode.removeChild(dom);
                 });
-            if (this.tag == 'fragment') {
+            if (this.type == 'fragment') {
                 this.doms = [];
                 this.children.forEach(child => {
                     this.doms = this.doms.concat(child.GetDom());
@@ -132,7 +132,7 @@ export class VNode {
     /**渲染完毕后的回调 */
     Rendered() {
         if (this.type == 'custom') this.mvvm.$Rendered();
-        if (this.type == 'standard') {
+        if (this.type == 'standard' || this.type == 'fragment') {
             this.children.forEach(child => {
                 child.Rendered();
             });
@@ -269,20 +269,27 @@ export class VNode {
         if (this.type == 'standard') {
             let innerhtmls: string[] = [];
 
-            if (this.tag != 'fragment') {
-                innerhtmls.push(`<${this.tag}`);
-                Object.keys(this.attrs).forEach(key => {
-                    let attrStr = SerializeAttr(key, this.attrs[key]);
-                    if (attrStr) innerhtmls.push(' ' + attrStr);
-                });
-                innerhtmls.push('>');
-            }
+            innerhtmls.push(`<${this.tag}`);
+            Object.keys(this.attrs).forEach(key => {
+                let attrStr = SerializeAttr(key, this.attrs[key]);
+                if (attrStr) innerhtmls.push(' ' + attrStr);
+            });
+            innerhtmls.push('>');
 
             this.children.forEach(child => {
                 let res = child.ToHtml();
                 innerhtmls.push(res);
             });
-            if (this.tag != 'fragment') innerhtmls.push(`</${this.tag}>`);
+            innerhtmls.push(`</${this.tag}>`);
+            return innerhtmls.join('');
+        }
+        if (this.type == 'fragment') {
+            let innerhtmls: string[] = [];
+
+            this.children.forEach(child => {
+                let res = child.ToHtml();
+                innerhtmls.push(res);
+            });
             return innerhtmls.join('');
         }
     }
@@ -292,29 +299,28 @@ export class VNode {
             return doms;
         }
         if (this.type == 'standard') {
-            if (this.tag != 'fragment') {
-                let elem = document.createElement(this.tag);
-                this.doms = [elem];
-                Object.keys(this.attrs).forEach(key => {
-                    let eventName = EventName(key);
-                    if (eventName) {
-                        elem.addEventListener(eventName, this.attrs[key]);
-                    } else ApplyAttr(elem, key, this.attrs[key]);
-                });
-                this.children.forEach(child => {
-                    let doms = child.ToDom();
-                    doms.forEach(dom => elem.appendChild(dom));
-                });
-                return [elem];
-            } else {
-                let children: (HTMLElement | Text)[] = [];
-                this.children.forEach(child => {
-                    let doms = child.ToDom();
-                    children = children.concat(doms);
-                });
-                this.doms = children;
-                return children;
-            }
+            let elem = document.createElement(this.tag);
+            this.doms = [elem];
+            Object.keys(this.attrs).forEach(key => {
+                let eventName = EventName(key);
+                if (eventName) {
+                    elem.addEventListener(eventName, this.attrs[key]);
+                } else ApplyAttr(elem, key, this.attrs[key]);
+            });
+            this.children.forEach(child => {
+                let doms = child.ToDom();
+                doms.forEach(dom => elem.appendChild(dom));
+            });
+            return [elem];
+        }
+        if (this.type == 'fragment') {
+            let children: (HTMLElement | Text)[] = [];
+            this.children.forEach(child => {
+                let doms = child.ToDom();
+                children = children.concat(doms);
+            });
+            this.doms = children;
+            return children;
         }
         if (this.type == 'text') {
             let text = document.createTextNode(this.text);
