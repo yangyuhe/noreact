@@ -7,18 +7,12 @@ class Square extends MVVM<{ onClick: Function, value: string }>{
         </div>
     }
 }
-class Board extends MVVM<{}>{
-    squares: string[] = Array(9).fill(null);
+class Board extends MVVM<{ squares: string[], onClick: Function }>{
     renderSquare(index: number) {
-        return <Square value={this.squares[index]} onClick={() => this.handleClick(index)}></Square>
-    }
-    handleClick(index: number) {
-        this.squares[index] = 'x';
+        return <Square value={this.$props.squares[index]} onClick={() => this.$props.onClick(index)}></Square>
     }
     protected $Render(): VNode {
-        const status = 'Next player: X';
         return <div>
-            <div className="status">{status}</div>
             <div className="board-row">
                 {this.renderSquare(0)}
                 {this.renderSquare(1)}
@@ -37,50 +31,73 @@ class Board extends MVVM<{}>{
         </div>
     }
 
+
 }
-class Game extends MVVM<void>{
+export class Game extends MVVM<{}>{
+    squares: string[] = Array(9).fill(null);
+    historys: string[][] = [];
+    xIsNext = true;
+    handleClick(index: number) {
+        if (this.squares[index]) {
+            return;
+        }
+        let winner = this.calculateWinner(this.squares);
+        if (winner) {
+            return;
+        }
+
+        this.squares[index] = this.xIsNext ? 'x' : 'o';
+        this.historys.push(this.squares.slice());
+        console.log(this.historys)
+        this.xIsNext = !this.xIsNext;
+    }
+    private calculateWinner(squares): string {
+        const lines = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6],
+        ];
+        for (let i = 0; i < lines.length; i++) {
+            const [a, b, c] = lines[i];
+            if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+                return squares[a];
+            }
+        }
+        return null;
+    }
+    private jumpTo(move: number) {
+        this.squares = this.historys[move];
+    }
     protected $Render(): VNode {
+        let winner = this.calculateWinner(this.squares);
+        let status;
+        if (winner) {
+            status = winner + " is winner";
+        } else
+            status = 'Next player: ' + (this.xIsNext ? 'x' : 'o');
+        let moves = this.historys.map((step, move) => {
+            const desc = move ?
+                'Go to move #' + move :
+                'Go to game start';
+            return (
+                <li>
+                    <button onClick={() => this.jumpTo(move)}>{desc}</button>
+                </li>
+            );
+        });
         return <div className="game">
             <div className="game-board">
-                <Board />
+                <Board squares={this.squares} onClick={(index) => { this.handleClick(index) }} />
             </div>
             <div className="game-info">
-                <div>{/* status */}</div>
-                <ol>{/* TODO */}</ol>
+                <div>{status}</div>
+                <ol>{moves}</ol>
             </div>
         </div>
     }
 }
-let game = new Game();
-
-class Test extends MVVM<void>{
-    hide = false
-    protected $Render(): VNode {
-        return <div>
-            {this.hide ? <TestItem></TestItem> : null}
-            <button onClick={() => this.toggle()}>toggle</button>
-        </div>
-    }
-    toggle() {
-        this.hide = !this.hide;
-    }
-
-}
-class TestItem extends MVVM<{}>{
-    time = new Date();
-    protected $Render(): VNode {
-        console.log("render...")
-        return <React.Fragment>
-            {this.time}
-        </React.Fragment>
-    }
-    $onInit() {
-        setInterval(() => {
-            this.time = new Date();
-        }, 1000);
-    }
-}
-let test = new Test();
-document.addEventListener("DOMContentLoaded", () => {
-    test.$AppendTo(document.body);
-});

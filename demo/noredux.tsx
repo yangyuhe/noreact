@@ -53,7 +53,7 @@ class Operation extends MVVM<{}>{
         </React.Fragment>
     }
 }
-class Tabs extends MVVM<void>{
+export class Tabs extends MVVM<{}>{
     curTab = 'oper';
     $Render() {
         return <div className="tabs-container">
@@ -71,8 +71,3 @@ class Tabs extends MVVM<void>{
         this.curTab = name;
     }
 }
-document.addEventListener("DOMContentLoaded", () => {
-    let tabs = new Tabs();
-    (window as any).noreact = tabs;
-    tabs.$AppendTo(document.body);
-});

@@ -9,7 +9,7 @@ declare global {
     }
 }
 
-class TodoList extends MVVM<void> {
+export class TodoList extends MVVM<{}> {
     private list: { id: number, content: string, time: string }[] = []
     private generate = 0;
     private showpop = false;
@@ -134,8 +134,3 @@ class Add extends MVVM<{ onAdd: (content: string, time: string, id: number) => v
         this.$emitUp("close")
     }
 }
-document.addEventListener("DOMContentLoaded", () => {
-    let about = new TodoList();
-    (window as any).noreact = about;
-    about.$AppendTo(document.body);
-});

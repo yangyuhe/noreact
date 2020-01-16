@@ -23,7 +23,8 @@ export abstract class MVVM<T> {
     constructor($props: T) {
         if (toString.call($props) == '[object Object]') {
             this.$props = $props;
-            this.$watchObject(this.$props);
+        } else {
+            (this.$props as any) = {};
         }
     }
     /**初始化函数 */
@@ -86,6 +87,9 @@ export abstract class MVVM<T> {
             this.$isdirty = true;
             InsertQueue(this);
         }
+    }
+    $GetDirty() {
+        return this.$isdirty;
     }
     $ApplyRefresh() {
         if (this.$isdirty) {
@@ -209,13 +213,16 @@ export abstract class MVVM<T> {
     private $overwriteArrayMethods(arr: any[], methodname: string, watchers: MVVM<any>[]) {
         let method = arr[methodname];
         if (typeof method == 'function') {
-            Object.defineProperty(arr, methodname, {
-                value: function () {
-                    watchers.forEach(item => item.$Dirty());
-                    return method.apply(this, arguments);
-                },
-                configurable: false
-            });
+            let descriptor = Object.getOwnPropertyDescriptor(arr, methodname);
+            if (!descriptor || descriptor.configurable) {
+                Object.defineProperty(arr, methodname, {
+                    value: function () {
+                        watchers.forEach(item => item.$Dirty());
+                        return method.apply(this, arguments);
+                    },
+                    configurable: false
+                });
+            }
         }
     }
     private $useOld(oldNode: VNode, newNode: VNode) {
@@ -224,13 +231,21 @@ export abstract class MVVM<T> {
             let newInstance = newNode.GetInstance();
             if (instance.$isdirty) {
                 instance.$props = newInstance.$props;
-                instance.$watchObject(instance.$props);
+                instance.$SetChildren(newInstance.$children);
                 instance.$ApplyRefresh();
             } else {
-                Object.assign(
-                    instance.$props,
-                    newInstance.$props
-                );
+                let same = this.$compareProps(instance.$props, newInstance.$props);
+                if (!same) {
+                    instance.$props = newInstance.$props;
+                    instance.$SetChildren(newInstance.$children);
+                    instance.$isdirty = true;
+                    instance.$ApplyRefresh();
+                }
+                if (instance.$children.length > 0 || newInstance.$children.length > 0) {
+                    instance.$SetChildren(newInstance.$children);
+                    instance.$isdirty = true;
+                    instance.$ApplyRefresh();
+                }
             }
             return;
         }
@@ -247,9 +262,68 @@ export abstract class MVVM<T> {
             return;
         }
     }
+    $IsParentOf(mvvm: MVVM<any>) {
+        let parentNode = mvvm.$attachedVNode.GetParent();
+        while (parentNode) {
+            if (parentNode.GetInstance() == this) {
+                return true;
+            }
+            parentNode = parentNode.GetParent();
+        }
+        return false;
+    }
+    /**
+     * 对比属性值，相同返回true,不相同返回false
+     */
+    private $compareProps(ps1: { [key: string]: any }, ps2: { [key: string]: any }) {
+        if (toString.call(ps1) == "[object Object]" && toString.call(ps2) == "[object Object]") {
+            let keys1 = Object.keys(ps1);
+            let keys2 = Object.keys(ps2);
+            let map = {};
+            keys1.forEach(key => {
+                map[key] = 1;
+            });
+            keys2.forEach(key => {
+                if (!map[key])
+                    map[key] = 1;
+                else
+                    map[key]++;
+            });
+            let different = false;
+            Object.keys(map).forEach(key => {
+                if (map[key] != 2) {
+                    different = true;
+                }
+            });
+            if (different)
+                return false;
+            else {
+                for (let i = 0; i < keys1.length; i++) {
+                    let key = keys1[i];
+                    let res = this.$compareProp(ps1[key], ps2[key]);
+                    if (!res)
+                        return false;
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+    private $compareProp(p1, p2) {
+        if (typeof p1 == 'function' && typeof p2 == 'function') {
+            if (typeof p1.prototype != 'undefined' && typeof p2.prototype != 'undefined') {
+                if (typeof p1.toString == 'function' && typeof p2.toString == 'function' && p1.toString() == p2.toString()) {
+                    return true;
+                }
+                return false;
+            }
+        }
+        if (p1 !== p2)
+            return false;
+        return true;
+    }
     private $diff(olds: VNode[], news: VNode[], parent: VNode) {
         let opers = Diff(olds, news, MVVM.$compareVNode);
-
         let index = 0;
         opers.forEach(item => {
             if (item.state == 'old') {

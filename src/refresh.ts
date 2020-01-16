@@ -26,12 +26,21 @@ export function InsertQueue(mvvm: MVVM<any>) {
 }
 function Refresh() {
     while (true) {
+        tempQueue.sort((m1: MVVM<any>, m2: MVVM<any>) => {
+            if (m1.$IsParentOf(m2)) {
+                return -1;
+            }
+            if (m2.$IsParentOf(m1)) {
+                return 1;
+            }
+            return 0;
+        });
         if (counter > maxLoop) {
             throw new Error("refresh loop more than " + maxLoop);
         }
         counter++;
         tempQueue.forEach(root => {
-            if (!root.$IsDestroyed())
+            if (!root.$IsDestroyed() && root.$GetDirty())
                 root.$ApplyRefresh();
         });
         if (queue.length == 0)
