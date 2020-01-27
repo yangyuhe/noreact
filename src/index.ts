@@ -1,3 +1,3 @@
 export { MVVM } from './MVVM';
-export { default as React } from './react';
+export { React, Ref, Fragment } from './react';
 export { VNode } from './VNode';

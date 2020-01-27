@@ -1,7 +1,7 @@
 import { Diff } from './diff';
 import { RegisterEvent, TriggerEvent } from './event-center';
 import { VNode } from './VNode';
-import React from './react';
+import { React } from './react';
 import { InsertQueue } from './refresh';
 
 export abstract class MVVM<T> {
@@ -9,12 +9,9 @@ export abstract class MVVM<T> {
     private $attachedVNode: VNode;
     /**组件内部的事件注册中心 */
     private $eventRegister: { [event: string]: Function[] } = {};
-    /**组件的名称，使用@Component装饰器设置该值 */
-    public $Name: string;
     /**该组件拥有的子级虚拟树 */
     protected $children: VNode[] = [];
     private $isdirty = false;
-    private $refs: { [key: string]: VNode } = {};
     protected $props: T;
     private $hasRenderedDom = false;
     private $mountDom: HTMLElement = null;
@@ -78,9 +75,11 @@ export abstract class MVVM<T> {
         return this.$root;
     }
 
-    /**设置该组件的子级虚拟树 */
     $SetChildren(children: VNode[]) {
         this.$children = children;
+    }
+    $GetChildren() {
+        return this.$children;
     }
     $Dirty() {
         if (!this.$isdirty) {
@@ -115,7 +114,7 @@ export abstract class MVVM<T> {
                             res.dom.parentNode.insertBefore(dom, res.dom);
                         });
                     }
-                    this.$root.GetDom().forEach(dom => {
+                    this.$root.Doms.forEach(dom => {
                         dom.remove();
                     });
                 }
@@ -128,23 +127,7 @@ export abstract class MVVM<T> {
             this.$isdirty = false;
         }
     }
-    $Ref(name: string): (MVVM<any> | HTMLElement) {
-        let ref = this.$refs[name];
-        if (ref && !ref.IsDestroyed()) {
-            if (ref.GetInstance())
-                return ref.GetInstance();
-            else
-                return ref.GetDom() && ref.GetDom()[0] as HTMLElement;
-        }
-        let res = this.$root.GetRef(name);
-        if (!res)
-            return null;
-        this.$refs[name] = res;
-        if (res.GetInstance())
-            return res.GetInstance();
-        else
-            return ref.GetDom() && res.GetDom()[0] as HTMLElement;
-    }
+
     $DoRender() {
         this.$onInit();
         let keys = [];
@@ -234,14 +217,9 @@ export abstract class MVVM<T> {
                 instance.$SetChildren(newInstance.$children);
                 instance.$ApplyRefresh();
             } else {
-                let same = this.$compareProps(instance.$props, newInstance.$props);
+                let same = this.$compareProps(instance.$props, newInstance.$props) && this.$compareChildren(instance.$children, newInstance.$children);
                 if (!same) {
                     instance.$props = newInstance.$props;
-                    instance.$SetChildren(newInstance.$children);
-                    instance.$isdirty = true;
-                    instance.$ApplyRefresh();
-                }
-                if (instance.$children.length > 0 || newInstance.$children.length > 0) {
                     instance.$SetChildren(newInstance.$children);
                     instance.$isdirty = true;
                     instance.$ApplyRefresh();
@@ -250,7 +228,8 @@ export abstract class MVVM<T> {
             return;
         }
         if (oldNode.GetType() == 'standard' || oldNode.GetType() == 'fragment') {
-            oldNode.ApplyAttrDiff(newNode.GetAttrs());
+            if (oldNode.GetType() == 'standard')
+                oldNode.ApplyAttrDiff(newNode.GetAttrs());
             this.$diff(
                 oldNode.GetChildren(),
                 newNode.GetChildren(),
@@ -308,6 +287,11 @@ export abstract class MVVM<T> {
             }
         }
         return false;
+    }
+    private $compareChildren(c1, c2) {
+        if (c1 instanceof Array && c2 instanceof Array && c1.length == 0 && c2.length == 0)
+            return true;
+        return c1 === c2;
     }
     private $compareProp(p1, p2) {
         if (typeof p1 == 'function' && typeof p2 == 'function') {
@@ -423,7 +407,4 @@ export abstract class MVVM<T> {
         }
         return true;
     }
-}
-export interface MVVMConstructor<T> {
-    new(params: T): MVVM<T>;
 }

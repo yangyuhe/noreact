@@ -1,15 +1,14 @@
 import { VNode } from './VNode';
-import { MVVMConstructor, MVVM } from './MVVM';
+import { MVVM } from './MVVM';
 import { VNODE_ID } from './attribute';
 
 const isInBrowser = new Function(
     'try {return this===window;}catch(e){ return false;}'
 );
-class React {
+class NoReact {
     private counter = 0;
     private mode: 'deep' | 'shallow' = 'deep';
     public target: MVVM<any>;
-    Fragment = Fragment;
     ResetCounter() {
         this.counter = 0;
     }
@@ -38,7 +37,7 @@ class React {
             vnode.SetChildren(allchildren);
             return vnode;
         }
-        if (Elem == this.Fragment) {
+        if (Elem == Fragment) {
             let vnode: VNode = new VNode('fragment');
             vnode.isMulti = true;
             if (!isInBrowser()) {
@@ -109,4 +108,7 @@ class React {
 export class Fragment {
 
 }
-export default new React();
+export class Ref {
+    current: HTMLElement | MVVM<any>;
+}
+export const React = new NoReact();

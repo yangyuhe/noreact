@@ -20,6 +20,9 @@ const applyAttr: { [name: string]: (elem: HTMLElement, value: any) => boolean } 
     key: (elem, value) => {
         return true;
     },
+    ref: (elem, value) => {
+        return true;
+    },
     value(elem, value) {
         if (elem instanceof HTMLInputElement) {
             elem.value = value;
@@ -69,6 +72,9 @@ const serializeAttr: { [name: string]: (value: any) => string } = {
         return 'class=' + value;
     },
     key: value => {
+        return '';
+    },
+    ref: value => {
         return '';
     },
     [VNODE_ID]: value => {

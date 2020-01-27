@@ -1,9 +1,10 @@
-import { React, MVVM, VNode } from "../src";
+import { React, MVVM, VNode, Fragment, Ref } from "../src";
 import "./style.scss";
+
 declare global {
     namespace JSX {
         interface IntrinsicAttributes {
-            ref?: any;
+            ref?: Ref;
             key?: any;
         }
     }
@@ -109,7 +110,7 @@ class Add extends MVVM<{ onAdd: (content: string, time: string, id: number) => v
         }
     }
     protected $Render(): VNode {
-        return <React.Fragment>
+        return <Fragment>
             <div className="pop-mask"></div>
             <div className="pop">
                 <div className="add-todo">
@@ -120,7 +121,7 @@ class Add extends MVVM<{ onAdd: (content: string, time: string, id: number) => v
                     <button onClick={this.onadd.bind(this)}>ok</button>
                 </div>
             </div>
-        </React.Fragment>
+        </Fragment>
     }
     onadd() {
         this.$props.onAdd(this.cotent, this.time, this.$props.editItem == null ? null : this.$props.editItem.id);

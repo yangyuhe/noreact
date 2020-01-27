@@ -1,11 +1,8 @@
 export * from "./src";
 declare global {
     namespace JSX {
-        interface IntrinsicElements {
-            [elemName: string]: any;
-        }
         interface IntrinsicAttributes {
-            ref?: any;
+            ref?: import("./src/react").Ref;
             key?: any;
         }
         type Element = import("./src/VNode").VNode

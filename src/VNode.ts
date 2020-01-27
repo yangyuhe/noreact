@@ -1,5 +1,6 @@
 import { ApplyAttr, RemoveAttr, SerializeAttr, GetEventAttrName as EventName } from './attribute';
 import { MVVM } from './MVVM';
+import { Ref } from './react';
 
 export class VNode {
     /**虚拟节点名称，即标准html的标签名 */
@@ -15,7 +16,7 @@ export class VNode {
     /**关联的组件实例，当type='custom'有效 */
     private mvvm: MVVM<any>;
     /**关联的实际dom元素 */
-    private doms: (HTMLElement | Text)[];
+    private dom: (HTMLElement | Text);
     /**节点类型 */
     private type: 'standard' | 'custom' | 'text' | 'fragment';
     /**是否已经被销毁 */
@@ -25,6 +26,19 @@ export class VNode {
 
     constructor(type: 'standard' | 'custom' | 'text' | 'fragment') {
         this.type = type;
+    }
+    get Doms(): (HTMLElement | Text)[] {
+        if (this.type == "standard" || this.type == "text")
+            return [this.dom];
+        if (this.type == "fragment") {
+            let doms = [];
+            this.children.forEach(child => {
+                doms = doms.concat(child.Doms);
+            });
+            return doms;
+        }
+        if (this.type == "custom")
+            return this.mvvm.$GetRoot().Doms;
     }
     SetTag(tag: string) {
         this.tag = tag;
@@ -47,26 +61,18 @@ export class VNode {
     GetParent() {
         return this.parent;
     }
-    /**在索引为index位置增加一个child,注意会引发实际的dom操作 */
     InsertVNode(child: VNode, index: number, domchange: boolean) {
         //虚拟dom操作
-        let oldNode = this.children[index];
         this.children.splice(index, 0, child);
         child.parent = this;
         if (domchange) {
             let res = this.GetSiblingDom(child);
-            let doms = child.GetDom();
+            let doms = child.Doms;
             if (res.isparent) {
                 (res.dom as HTMLElement).append(...doms);
             } else {
                 doms.forEach(dom => {
                     res.dom.parentNode.insertBefore(dom, res.dom);
-                });
-            }
-            if (this.type == 'fragment') {
-                this.doms = [];
-                this.children.forEach(child => {
-                    this.doms = this.doms.concat(child.GetDom());
                 });
             }
         }
@@ -82,30 +88,24 @@ export class VNode {
         index++;
         while (index < this.children.length) {
             let child = this.children[index];
-            let doms = child.GetDom();
+            let doms = child.Doms;
             if (doms.length > 0)
                 return { dom: doms[0], isparent: false };
             index++;
         }
         if (this.isMulti)
             return this.parent.GetSiblingDom(this);
-        return { dom: this.doms[0], isparent: true };
+        return { dom: this.dom, isparent: true };
     }
     /**移除一个孩子节点，注意会引发dom操作 */
     RemoveVNode(child: VNode, index: number, domchange: boolean = true) {
         this.children.splice(index, 1);
         if (domchange) {
-            let doms = child.GetDom();
+            let doms = child.Doms;
             if (doms)
                 doms.forEach(dom => {
                     dom.parentNode.removeChild(dom);
                 });
-            if (this.type == 'fragment') {
-                this.doms = [];
-                this.children.forEach(child => {
-                    this.doms = this.doms.concat(child.GetDom());
-                });
-            }
         }
     }
     SetChildren(children: VNode[]) {
@@ -137,28 +137,17 @@ export class VNode {
                 child.Rendered();
             });
         }
-    }
-    GetDom(): (HTMLElement | Text)[] {
-        if (this.type == 'custom')
-            return this.mvvm.$GetRoot().GetDom();
-        return this.doms;
-    }
-    GetRef(name: string): VNode {
-        let attr = this.attrs['ref'];
-        if (attr)
-            return this;
-        else {
-            if (this.type != 'custom') {
-                for (let i = 0; i < this.children.length; i++) {
-                    let res = this.children[i].GetRef(name);
-                    if (res) {
-                        return res;
-                    }
+        if (this.attrs['ref'] instanceof Ref) {
+            if (this.type == "standard")
+                this.attrs['ref'].current = (this.dom as HTMLElement);
+            else {
+                if (this.type == "custom") {
+                    this.attrs['ref'].current = this.mvvm;
                 }
             }
         }
-        return null;
     }
+
     GetType() {
         return this.type;
     }
@@ -182,12 +171,12 @@ export class VNode {
             if (newAttrs[key] == null) {
                 //删除的属性
                 if (isEvent) {
-                    (this.doms[0] as HTMLElement).removeEventListener(
+                    (this.dom as HTMLElement).removeEventListener(
                         eventName,
                         this.attrs[key]
                     );
                 } else {
-                    RemoveAttr(this.doms[0] as HTMLElement, key, this.attrs[key]);
+                    RemoveAttr(this.dom as HTMLElement, key, this.attrs[key]);
                 }
             } else {
                 //已存在的属性
@@ -200,17 +189,17 @@ export class VNode {
                     let newStyle = newAttrs.style;
                     for (let key in oldStyle) {
                         if (!newStyle[key]) {
-                            (this.doms[0] as HTMLElement).style[key] = '';
+                            (this.dom as HTMLElement).style[key] = '';
                         } else {
                             if (newStyle[key] != oldStyle[key]) {
-                                (this.doms[0] as HTMLElement).style[key] =
+                                (this.dom as HTMLElement).style[key] =
                                     newStyle[key];
                             }
                         }
                     }
                     for (let key in newStyle) {
                         if (!oldStyle[key]) {
-                            (this.doms[0] as HTMLElement).style[key] =
+                            (this.dom as HTMLElement).style[key] =
                                 newStyle[key];
                         }
                     }
@@ -218,20 +207,20 @@ export class VNode {
                 }
                 if (isEvent) {
                     if (this.attrs[key] != newAttrs[key]) {
-                        this.doms[0].removeEventListener(
+                        this.dom.removeEventListener(
                             eventName,
                             this.attrs[key]
                         );
-                        this.doms[0].addEventListener(
+                        this.dom.addEventListener(
                             eventName,
                             newAttrs[key]
                         );
                     }
                 } else {
                     if (this.attrs[key] != newAttrs[key]) {
-                        RemoveAttr(<HTMLElement>this.doms[0], key, this.attrs[key]);
+                        RemoveAttr(<HTMLElement>this.dom, key, this.attrs[key]);
                         ApplyAttr(
-                            <HTMLElement>this.doms[0],
+                            <HTMLElement>this.dom,
                             key,
                             newAttrs[key]
                         );
@@ -245,13 +234,13 @@ export class VNode {
             if (this.attrs[key] == null) {
                 //新增属性
                 if (isEvent) {
-                    (this.doms[0] as HTMLElement).addEventListener(
+                    (this.dom as HTMLElement).addEventListener(
                         eventName,
                         newAttrs[key]
                     );
                 } else {
                     ApplyAttr(
-                        <HTMLElement>this.doms[0],
+                        <HTMLElement>this.dom,
                         key,
                         newAttrs[key]
                     );
@@ -300,7 +289,7 @@ export class VNode {
         }
         if (this.type == 'standard') {
             let elem = document.createElement(this.tag);
-            this.doms = [elem];
+            this.dom = elem;
             Object.keys(this.attrs).forEach(key => {
                 let eventName = EventName(key);
                 if (eventName) {
@@ -319,12 +308,11 @@ export class VNode {
                 let doms = child.ToDom();
                 children = children.concat(doms);
             });
-            this.doms = children;
             return children;
         }
         if (this.type == 'text') {
             let text = document.createTextNode(this.text);
-            this.doms = [text];
+            this.dom = text;
             return [text];
         }
     }
@@ -345,7 +333,7 @@ export class VNode {
     }
 
     AttachDom(dom: HTMLElement | Text) {
-        this.doms = [dom];
+        this.dom = dom;
         Object.keys(this.attrs).forEach(key => {
             let eventName = EventName(key);
             if (eventName) {

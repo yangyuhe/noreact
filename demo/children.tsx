@@ -1,12 +1,12 @@
-import { MVVM, VNode, React } from "../src";
+import { React, MVVM, VNode, Fragment, Ref } from "../src";
 import { Game } from "./game";
 import { Tabs } from "./noredux";
 import { TodoList } from "./todo";
 class Header extends MVVM<{}>{
     protected $Render() {
-        return <React.Fragment>
+        return <Fragment>
             {this.$children}
-        </React.Fragment>
+        </Fragment>
     }
 }
 class Body extends MVVM<{}>{
@@ -18,18 +18,29 @@ class Body extends MVVM<{}>{
 }
 class App extends MVVM<void>{
     menus = ["home", "about us"];
+    usernameRef: Ref;
+    todolistRef: Ref;
+    $onInit() {
+        this.usernameRef = new Ref();
+        this.todolistRef = new Ref();
+    }
     protected $Render(): VNode {
         return <div className="app">
             <Header>
                 {this.menus.map(menu => <div>{menu}</div>)}
+                <span ref={this.usernameRef}>user name</span>
             </Header>
             <Body>
-                <TodoList></TodoList>
+                <TodoList ref={this.todolistRef}></TodoList>
                 <Game></Game>
                 <Tabs></Tabs>
                 <button onClick={() => { this.addmenu() }}>add menu</button>
             </Body>
         </div>
+    }
+    $onRendered() {
+        console.log(this.usernameRef.current);
+        console.log(this.todolistRef.current);
     }
     addmenu() {
         this.menus.push("demo");

@@ -1,4 +1,4 @@
-import { MVVM, React } from "../src";
+import { MVVM, React, Fragment } from "../src";
 
 class Person {
     constructor(public name: string, public age: number) {
@@ -18,10 +18,10 @@ class PersonCard extends MVVM<{}>{
         this.person = person;
     }
     $Render() {
-        return <React.Fragment>
+        return <Fragment>
             <h1>Person Card</h1>
             <div>{this.person.name}</div>
-        </React.Fragment>
+        </Fragment>
 
     }
 }
@@ -34,11 +34,11 @@ class UserCenter extends MVVM<{}>{
         console.log("user destroyed")
     }
     $Render() {
-        return <React.Fragment>
+        return <Fragment>
             <h1>User Center</h1>
             <div>Name:{this.person.name}</div>
             <div>Age:{this.person.age}</div>
-        </React.Fragment>
+        </Fragment>
     }
 }
 class Operation extends MVVM<{}>{
@@ -47,10 +47,10 @@ class Operation extends MVVM<{}>{
         this.person = person;
     }
     $Render() {
-        return <React.Fragment>
+        return <Fragment>
             <button onClick={this.person.changeName.bind(person)}>change name</button>
             <button onClick={this.person.changeAge.bind(person)}>change age</button>
-        </React.Fragment>
+        </Fragment>
     }
 }
 export class Tabs extends MVVM<{}>{
