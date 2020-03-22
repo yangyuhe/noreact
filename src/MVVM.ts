@@ -1,8 +1,9 @@
 import { Diff } from './diff';
 import { RegisterEvent, TriggerEvent } from './event-center';
 import { VNode } from './VNode';
-import { React } from './react';
+import { React, GetId } from './react';
 import { InsertQueue } from './refresh';
+import Dev from "./dev";
 
 export abstract class MVVM<T> {
     private $root: VNode;
@@ -16,6 +17,7 @@ export abstract class MVVM<T> {
     private $hasRenderedDom = false;
     private $mountDom: HTMLElement = null;
     private $isDestroyed = false;
+    protected $id: number;
 
     constructor($props: T) {
         if (toString.call($props) == '[object Object]') {
@@ -23,6 +25,7 @@ export abstract class MVVM<T> {
         } else {
             (this.$props as any) = {};
         }
+        this.$id = GetId();
     }
     /**初始化函数 */
     protected $onInit(): void { }
@@ -92,6 +95,7 @@ export abstract class MVVM<T> {
     }
     $ApplyRefresh() {
         if (this.$isdirty) {
+            Dev.OnChange("update", [this]);
             React.ChangeMode('shallow');
 
             let old = React.target;
@@ -101,8 +105,9 @@ export abstract class MVVM<T> {
 
             React.ChangeMode('deep');
             let same = MVVM.$compareVNode(this.$root, newroot);
-            if (same)
+            if (same) {
                 this.$useOld(this.$root, newroot);
+            }
             else {
                 if (this.$hasRenderedDom) {
                     let doms = newroot.ToDom();
@@ -120,9 +125,17 @@ export abstract class MVVM<T> {
                 }
                 this.$root.GetParent().isMulti = newroot.isMulti;
                 newroot.SetParent(this.$root.GetParent());
+                this.$root.Destroy();
+                let oldmvvms = this.$root.GetAllMvvm();
+                if (oldmvvms.length > 0)
+                    Dev.OnChange("delete", oldmvvms);
                 this.$root = newroot;
                 if (this.$hasRenderedDom)
                     newroot.Rendered();
+
+                let newmvvms = newroot.GetAllMvvm();
+                if (newmvvms.length > 0)
+                    Dev.OnChange("new", newmvvms, { isparent: true, id: this.$id });
             }
             this.$isdirty = false;
         }
@@ -323,6 +336,8 @@ export abstract class MVVM<T> {
                     if (this.$hasRenderedDom)
                         item.newValue.ToDom();
                     parent.InsertVNode(item.newValue, index, this.$hasRenderedDom);
+                    this.$devNew(item.newValue, index);
+
                     if (this.$hasRenderedDom)
                         item.newValue.Rendered();
                 }
@@ -331,6 +346,7 @@ export abstract class MVVM<T> {
             }
             if (item.state == 'delete') {
                 parent.RemoveVNode(item.oldValue, index, this.$hasRenderedDom && item.isdeprecated);
+                this.$devDelete(item.oldValue);
                 if (item.isdeprecated) {
                     item.oldValue.Destroy();
                 }
@@ -338,6 +354,7 @@ export abstract class MVVM<T> {
             }
             if (item.state == 'replace') {
                 parent.RemoveVNode(item.oldValue, index, this.$hasRenderedDom && item.isdeprecated);
+                this.$devDelete(item.oldValue);
                 if (item.isdeprecated) {
                     item.oldValue.Destroy();
                 }
@@ -348,6 +365,7 @@ export abstract class MVVM<T> {
                     if (this.$hasRenderedDom)
                         item.newValue.ToDom();
                     parent.InsertVNode(item.newValue, index, this.$hasRenderedDom);
+                    this.$devNew(item.newValue, index);
                     if (this.$hasRenderedDom)
                         item.newValue.Rendered();
                 }
@@ -355,6 +373,29 @@ export abstract class MVVM<T> {
             }
         });
     }
+    private $devDelete(vnode: VNode) {
+        let mvvms = vnode.GetAllMvvm();
+        if (mvvms.length > 0) {
+            Dev.OnChange("delete", mvvms);
+        }
+    }
+
+    private $devNew(vnode: VNode, index) {
+        let mvvms = vnode.GetAllMvvm();
+        if (mvvms.length > 0) {
+            let nextmvvm = null;
+            let parent = vnode.GetParent();
+            if (parent.GetChildren().length - 1 > index) {
+                let nextsibling = parent.GetChildren()[index + 1];
+                nextmvvm = nextsibling.GetFirstChildMvvm();
+                if (nextmvvm)
+                    Dev.OnChange("new", mvvms, { isparent: false, id: nextmvvm.$id });
+            }
+            if (!nextmvvm)
+                Dev.OnChange("new", mvvms, { isparent: true, id: parent.GetNearestAncestorMvvm().$id });
+        }
+    }
+
     $Rendered() {
         this.$root.Rendered();
         this.$onRendered();
@@ -380,9 +421,13 @@ export abstract class MVVM<T> {
         dom.append(...this.$ToDom());
         this.$mountDom = dom;
         this.$Rendered();
+        Dev.AddMvvm(this);
     }
     $GetMountDom() {
         return this.$mountDom;
+    }
+    $GetAttachedVNode() {
+        return this.$attachedVNode;
     }
     static $compareVNode(left: VNode, right: VNode) {
         if (left.GetAttr('key') != right.GetAttr('key')) {
@@ -406,5 +451,8 @@ export abstract class MVVM<T> {
             if (left.GetText() != right.GetText()) return false;
         }
         return true;
+    }
+    GetProps() {
+        return this.$props;
     }
 }

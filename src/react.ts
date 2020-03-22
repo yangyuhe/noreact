@@ -6,12 +6,8 @@ const isInBrowser = new Function(
     'try {return this===window;}catch(e){ return false;}'
 );
 class NoReact {
-    private counter = 0;
     private mode: 'deep' | 'shallow' = 'deep';
     public target: MVVM<any>;
-    ResetCounter() {
-        this.counter = 0;
-    }
     createElement(
         Elem: string | (typeof MVVM) | typeof Fragment,
         attrs: { [key: string]: any },
@@ -24,10 +20,6 @@ class NoReact {
             let vnode: VNode = new VNode('standard');
             vnode.SetTag(Elem);
             vnode.isMulti = false;
-            if (!isInBrowser()) {
-                vnode.SetAttr(VNODE_ID, this.counter);
-                this.counter++;
-            }
 
             if (attrs != null) {
                 for (let key in attrs) {
@@ -40,10 +32,6 @@ class NoReact {
         if (Elem == Fragment) {
             let vnode: VNode = new VNode('fragment');
             vnode.isMulti = true;
-            if (!isInBrowser()) {
-                vnode.SetAttr(VNODE_ID, this.counter);
-                this.counter++;
-            }
             vnode.SetChildren(allchildren);
             if (attrs != null) {
                 for (let key in attrs) {
@@ -54,11 +42,6 @@ class NoReact {
         }
         if ((Elem as Function).prototype instanceof MVVM) {
             let vnode = new VNode('custom');
-            if (!isInBrowser()) {
-                vnode.SetAttr(VNODE_ID, this.counter);
-                this.counter++;
-            }
-
             let mvvm = new (Elem as any)(attrs) as MVVM<any>;
 
             vnode.SetMvvm(mvvm);
@@ -112,3 +95,8 @@ export class Ref {
     current: HTMLElement | MVVM<any>;
 }
 export const React = new NoReact();
+
+let counter=0;
+export function GetId(){
+    return counter++;
+}

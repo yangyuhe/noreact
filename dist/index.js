@@ -112,8 +112,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var diff_1 = __webpack_require__(/*! ./diff */ "./src/diff.ts");
 var event_center_1 = __webpack_require__(/*! ./event-center */ "./src/event-center.ts");
 var VNode_1 = __webpack_require__(/*! ./VNode */ "./src/VNode.ts");
-var react_1 = __importDefault(__webpack_require__(/*! ./react */ "./src/react.ts"));
+var react_1 = __webpack_require__(/*! ./react */ "./src/react.ts");
 var refresh_1 = __webpack_require__(/*! ./refresh */ "./src/refresh.ts");
+var dev_1 = __importDefault(__webpack_require__(/*! ./dev */ "./src/dev.ts"));
 var MVVM = /** @class */ (function () {
     function MVVM($props) {
         /**组件内部的事件注册中心 */
@@ -121,19 +122,23 @@ var MVVM = /** @class */ (function () {
         /**该组件拥有的子级虚拟树 */
         this.$children = [];
         this.$isdirty = false;
-        this.$refs = {};
-        this.hasRenderedDom = false;
+        this.$hasRenderedDom = false;
+        this.$mountDom = null;
+        this.$isDestroyed = false;
         if (toString.call($props) == '[object Object]') {
             this.$props = $props;
-            this.watchObject(this.$props);
         }
+        else {
+            this.$props = {};
+        }
+        this.$id = react_1.GetId();
     }
     /**初始化函数 */
-    MVVM.prototype.onInit = function () { };
+    MVVM.prototype.$onInit = function () { };
     /**渲染完成后该方法会被调用，此时elem成员变量才可以被访问到 */
-    MVVM.prototype.onRendered = function () { };
+    MVVM.prototype.$onRendered = function () { };
     /**销毁函数 */
-    MVVM.prototype.onDestroyed = function () { };
+    MVVM.prototype.$onDestroyed = function () { };
     /**向所有父级发送消息 */
     MVVM.prototype.$emitUp = function (event, data) {
         this.$root.EmitUp(event, data, this);
@@ -165,24 +170,25 @@ var MVVM = /** @class */ (function () {
         }
     };
     MVVM.prototype.$ToDom = function () {
-        this.hasRenderedDom = true;
+        this.$hasRenderedDom = true;
         if (!this.$root)
             this.$DoRender();
         var doms = this.$root.ToDom();
-        this.$attachedVNode.SetDom(doms);
         return doms;
     };
     MVVM.prototype.$ToHtml = function () {
-        return this.Render().ToHtml();
+        return this.$Render().ToHtml();
     };
     MVVM.prototype.$GetRoot = function () {
         if (!this.$root)
             this.$DoRender();
         return this.$root;
     };
-    /**设置该组件的子级虚拟树 */
     MVVM.prototype.$SetChildren = function (children) {
         this.$children = children;
+    };
+    MVVM.prototype.$GetChildren = function () {
+        return this.$children;
     };
     MVVM.prototype.$Dirty = function () {
         if (!this.$isdirty) {
@@ -190,55 +196,75 @@ var MVVM = /** @class */ (function () {
             refresh_1.InsertQueue(this);
         }
     };
+    MVVM.prototype.$GetDirty = function () {
+        return this.$isdirty;
+    };
     MVVM.prototype.$ApplyRefresh = function () {
+        var _a;
         if (this.$isdirty) {
-            react_1.default.ChangeMode('shallow');
-            var old = react_1.default.target;
-            react_1.default.target = this;
-            var newroot = this.Render();
-            react_1.default.target = old;
-            react_1.default.ChangeMode('deep');
-            this.$diff([this.$root], [newroot], this.$root.GetParent());
+            dev_1.default.OnChange("update", [this]);
+            react_1.React.ChangeMode('shallow');
+            var old = react_1.React.target;
+            react_1.React.target = this;
+            var newroot = this.$Render();
+            react_1.React.target = old;
+            react_1.React.ChangeMode('deep');
+            var same = MVVM.$compareVNode(this.$root, newroot);
+            if (same) {
+                this.$useOld(this.$root, newroot);
+            }
+            else {
+                if (this.$hasRenderedDom) {
+                    var doms = newroot.ToDom();
+                    var res_1 = this.$root.GetParent().GetSiblingDom(this.$root);
+                    if (res_1.isparent) {
+                        (_a = res_1.dom).append.apply(_a, doms);
+                    }
+                    else {
+                        doms.forEach(function (dom) {
+                            res_1.dom.parentNode.insertBefore(dom, res_1.dom);
+                        });
+                    }
+                    this.$root.Doms.forEach(function (dom) {
+                        dom.remove();
+                    });
+                }
+                this.$root.GetParent().isMulti = newroot.isMulti;
+                newroot.SetParent(this.$root.GetParent());
+                var oldmvvms = this.$root.GetAllMvvm();
+                if (oldmvvms.length > 0)
+                    dev_1.default.OnChange("delete", oldmvvms);
+                this.$root = newroot;
+                if (this.$hasRenderedDom)
+                    newroot.Rendered();
+                var newmvvms = newroot.GetAllMvvm();
+                if (newmvvms.length > 0)
+                    dev_1.default.OnChange("new", newmvvms, { isparent: true, id: this.$id });
+            }
             this.$isdirty = false;
         }
     };
-    MVVM.prototype.$Ref = function (name) {
-        var ref = this.$refs[name];
-        if (ref && !ref.IsDestroyed()) {
-            if (ref.GetInstance())
-                return ref.GetInstance();
-            else
-                return ref.GetDom() && ref.GetDom()[0];
-        }
-        var res = this.$root.GetRef(name);
-        if (!res)
-            return null;
-        this.$refs[name] = res;
-        if (res.GetInstance())
-            return res.GetInstance();
-        else
-            return ref.GetDom() && res.GetDom()[0];
-    };
     MVVM.prototype.$DoRender = function () {
-        this.onInit();
+        this.$onInit();
         var keys = [];
         Object.keys(this).forEach(function (key) {
             if (!key.startsWith('$'))
                 keys.push(key);
         });
-        keys.length > 0 && this.watchObject(this, keys);
-        var old = react_1.default.target;
-        react_1.default.target = this;
-        this.$root = this.Render();
+        keys.length > 0 && this.$watchObject(this, keys);
+        var old = react_1.React.target;
+        react_1.React.target = this;
+        this.$root = this.$Render();
         if (!this.$attachedVNode) {
             this.$attachedVNode = new VNode_1.VNode("custom");
             this.$attachedVNode.SetMvvm(this);
         }
+        this.$attachedVNode.isMulti = this.$root.isMulti;
         this.$root.SetParent(this.$attachedVNode);
-        react_1.default.target = old;
+        react_1.React.target = old;
         return this.$root;
     };
-    MVVM.prototype.watchObject = function (obj, keys) {
+    MVVM.prototype.$watchObject = function (obj, keys) {
         var _this = this;
         if (toString.call(obj) == '[object Object]' || toString.call(obj) == '[object Array]') {
             var watchers_1 = [];
@@ -248,9 +274,9 @@ var MVVM = /** @class */ (function () {
                     var value_1 = obj[key];
                     Object.defineProperty(obj, key, {
                         get: function () {
-                            if (react_1.default.target &&
-                                watchers_1.indexOf(react_1.default.target)) {
-                                watchers_1.push(react_1.default.target);
+                            if (react_1.React.target &&
+                                watchers_1.indexOf(react_1.React.target)) {
+                                watchers_1.push(react_1.React.target);
                             }
                             return value_1;
                         },
@@ -259,62 +285,137 @@ var MVVM = /** @class */ (function () {
                                 watchers_1.forEach(function (item) { return item.$Dirty(); });
                                 value_1 = val;
                                 if (toString.call(value_1) == "[object Array]")
-                                    _this.watchArray(value_1, watchers_1);
-                                _this.watchObject(value_1);
+                                    _this.$watchArray(value_1, watchers_1);
+                                _this.$watchObject(value_1);
                             }
                         },
                         configurable: false,
                         enumerable: true
                     });
                     if (toString.call(value_1) == "[object Array]")
-                        _this.watchArray(value_1, watchers_1);
-                    _this.watchObject(value_1);
+                        _this.$watchArray(value_1, watchers_1);
+                    _this.$watchObject(value_1);
                 }
             });
             return;
         }
     };
-    MVVM.prototype.watchArray = function (arr, watchers) {
-        this.overwriteArrayMethods(arr, 'pop', watchers);
-        this.overwriteArrayMethods(arr, 'push', watchers);
-        this.overwriteArrayMethods(arr, 'splice', watchers);
-        this.overwriteArrayMethods(arr, 'unshift', watchers);
-        this.overwriteArrayMethods(arr, 'shift', watchers);
+    MVVM.prototype.$watchArray = function (arr, watchers) {
+        this.$overwriteArrayMethods(arr, 'pop', watchers);
+        this.$overwriteArrayMethods(arr, 'push', watchers);
+        this.$overwriteArrayMethods(arr, 'splice', watchers);
+        this.$overwriteArrayMethods(arr, 'unshift', watchers);
+        this.$overwriteArrayMethods(arr, 'shift', watchers);
     };
-    MVVM.prototype.overwriteArrayMethods = function (arr, methodname, watchers) {
+    MVVM.prototype.$overwriteArrayMethods = function (arr, methodname, watchers) {
         var method = arr[methodname];
         if (typeof method == 'function') {
-            Object.defineProperty(arr, methodname, {
-                value: function () {
-                    watchers.forEach(function (item) { return item.$Dirty(); });
-                    return method.apply(this, arguments);
-                },
-                configurable: false
-            });
+            var descriptor = Object.getOwnPropertyDescriptor(arr, methodname);
+            if (!descriptor || descriptor.configurable) {
+                Object.defineProperty(arr, methodname, {
+                    value: function () {
+                        watchers.forEach(function (item) { return item.$Dirty(); });
+                        return method.apply(this, arguments);
+                    },
+                    configurable: false
+                });
+            }
         }
     };
-    MVVM.prototype.useOld = function (oldNode, newNode) {
+    MVVM.prototype.$useOld = function (oldNode, newNode) {
         if (oldNode.GetType() == 'custom') {
             var instance = oldNode.GetInstance();
             var newInstance = newNode.GetInstance();
             if (instance.$isdirty) {
                 instance.$props = newInstance.$props;
-                instance.watchObject(instance.$props);
+                instance.$SetChildren(newInstance.$children);
                 instance.$ApplyRefresh();
             }
             else {
-                Object.assign(instance.$props, newInstance.$props);
+                var same = this.$compareProps(instance.$props, newInstance.$props) && this.$compareChildren(instance.$children, newInstance.$children);
+                if (!same) {
+                    instance.$props = newInstance.$props;
+                    instance.$SetChildren(newInstance.$children);
+                    instance.$isdirty = true;
+                    instance.$ApplyRefresh();
+                }
             }
             return;
         }
-        if (oldNode.GetType() == 'standard') {
-            oldNode.ApplyAttrDiff(newNode.GetAttrs());
+        if (oldNode.GetType() == 'standard' || oldNode.GetType() == 'fragment') {
+            if (oldNode.GetType() == 'standard')
+                oldNode.ApplyAttrDiff(newNode.GetAttrs());
             this.$diff(oldNode.GetChildren(), newNode.GetChildren(), oldNode);
             return;
         }
         if (oldNode.GetType() == 'text') {
             return;
         }
+    };
+    MVVM.prototype.$IsParentOf = function (mvvm) {
+        var parentNode = mvvm.$attachedVNode.GetParent();
+        while (parentNode) {
+            if (parentNode.GetInstance() == this) {
+                return true;
+            }
+            parentNode = parentNode.GetParent();
+        }
+        return false;
+    };
+    /**
+     * 对比属性值，相同返回true,不相同返回false
+     */
+    MVVM.prototype.$compareProps = function (ps1, ps2) {
+        if (toString.call(ps1) == "[object Object]" && toString.call(ps2) == "[object Object]") {
+            var keys1 = Object.keys(ps1);
+            var keys2 = Object.keys(ps2);
+            var map_1 = {};
+            keys1.forEach(function (key) {
+                map_1[key] = 1;
+            });
+            keys2.forEach(function (key) {
+                if (!map_1[key])
+                    map_1[key] = 1;
+                else
+                    map_1[key]++;
+            });
+            var different_1 = false;
+            Object.keys(map_1).forEach(function (key) {
+                if (map_1[key] != 2) {
+                    different_1 = true;
+                }
+            });
+            if (different_1)
+                return false;
+            else {
+                for (var i = 0; i < keys1.length; i++) {
+                    var key = keys1[i];
+                    var res = this.$compareProp(ps1[key], ps2[key]);
+                    if (!res)
+                        return false;
+                }
+                return true;
+            }
+        }
+        return false;
+    };
+    MVVM.prototype.$compareChildren = function (c1, c2) {
+        if (c1 instanceof Array && c2 instanceof Array && c1.length == 0 && c2.length == 0)
+            return true;
+        return c1 === c2;
+    };
+    MVVM.prototype.$compareProp = function (p1, p2) {
+        if (typeof p1 == 'function' && typeof p2 == 'function') {
+            if (typeof p1.prototype != 'undefined' && typeof p2.prototype != 'undefined') {
+                if (typeof p1.toString == 'function' && typeof p2.toString == 'function' && p1.toString() == p2.toString()) {
+                    return true;
+                }
+                return false;
+            }
+        }
+        if (p1 !== p2)
+            return false;
+        return true;
     };
     MVVM.prototype.$diff = function (olds, news, parent) {
         var _this = this;
@@ -323,61 +424,109 @@ var MVVM = /** @class */ (function () {
         opers.forEach(function (item) {
             if (item.state == 'old') {
                 index++;
-                _this.useOld(item.oldValue, item.newValue);
+                _this.$useOld(item.oldValue, item.newValue);
                 return;
             }
             if (item.state == 'new') {
                 if (item.newValueOrigin) {
-                    _this.useOld(item.newValueOrigin, item.newValue);
-                    parent.InsertVNode(item.newValueOrigin, index);
+                    _this.$useOld(item.newValueOrigin, item.newValue);
+                    parent.InsertVNode(item.newValueOrigin, index, _this.$hasRenderedDom);
                 }
                 else {
-                    if (_this.hasRenderedDom)
+                    if (_this.$hasRenderedDom)
                         item.newValue.ToDom();
-                    parent.InsertVNode(item.newValue, index);
-                    if (_this.hasRenderedDom)
+                    parent.InsertVNode(item.newValue, index, _this.$hasRenderedDom);
+                    _this.$devNew(item.newValue, index);
+                    if (_this.$hasRenderedDom)
                         item.newValue.Rendered();
                 }
                 index++;
                 return;
             }
             if (item.state == 'delete') {
-                parent.RemoveVNode(item.oldValue, index, item.isdeprecated);
+                parent.RemoveVNode(item.oldValue, index, _this.$hasRenderedDom && item.isdeprecated);
+                _this.$devDelete(item.oldValue);
                 if (item.isdeprecated) {
                     item.oldValue.Destroy();
                 }
                 return;
             }
             if (item.state == 'replace') {
-                parent.RemoveVNode(item.oldValue, index, item.isdeprecated);
+                parent.RemoveVNode(item.oldValue, index, _this.$hasRenderedDom && item.isdeprecated);
+                _this.$devDelete(item.oldValue);
                 if (item.isdeprecated) {
                     item.oldValue.Destroy();
                 }
                 if (item.newValueOrigin) {
-                    _this.useOld(item.newValueOrigin, item.newValue);
-                    parent.InsertVNode(item.newValueOrigin, index);
+                    _this.$useOld(item.newValueOrigin, item.newValue);
+                    parent.InsertVNode(item.newValueOrigin, index, _this.$hasRenderedDom);
                 }
                 else {
-                    if (_this.hasRenderedDom)
+                    if (_this.$hasRenderedDom)
                         item.newValue.ToDom();
-                    parent.InsertVNode(item.newValue, index);
-                    if (_this.hasRenderedDom)
+                    parent.InsertVNode(item.newValue, index, _this.$hasRenderedDom);
+                    _this.$devNew(item.newValue, index);
+                    if (_this.$hasRenderedDom)
                         item.newValue.Rendered();
                 }
                 index++;
             }
         });
     };
+    MVVM.prototype.$devDelete = function (vnode) {
+        var mvvms = vnode.GetAllMvvm();
+        if (mvvms.length > 0) {
+            dev_1.default.OnChange("delete", mvvms);
+        }
+    };
+    MVVM.prototype.$devNew = function (vnode, index) {
+        var mvvms = vnode.GetAllMvvm();
+        if (mvvms.length > 0) {
+            var nextmvvm = null;
+            var parent_1 = vnode.GetParent();
+            if (parent_1.GetChildren().length - 1 > index) {
+                var nextsibling = parent_1.GetChildren()[index + 1];
+                nextmvvm = nextsibling.GetFirstChildMvvm();
+                if (nextmvvm)
+                    dev_1.default.OnChange("new", mvvms, { isparent: false, id: nextmvvm.$id });
+            }
+            if (!nextmvvm)
+                dev_1.default.OnChange("new", mvvms, { isparent: true, id: parent_1.GetNearestAncestorMvvm().$id });
+        }
+    };
     MVVM.prototype.$Rendered = function () {
         this.$root.Rendered();
-        this.onRendered();
+        this.$onRendered();
     };
     MVVM.prototype.$Destroy = function () {
-        this.onDestroyed();
+        this.$isDestroyed = true;
+        this.$onDestroyed();
         this.$root.Destroy();
+    };
+    MVVM.prototype.$IsDestroyed = function () {
+        return this.$isDestroyed;
     };
     MVVM.prototype.$AttachVNode = function (vnode) {
         this.$attachedVNode = vnode;
+    };
+    MVVM.prototype.$AppendTo = function (elem) {
+        var dom;
+        if (typeof elem == 'string') {
+            dom = document.querySelector(elem);
+        }
+        else {
+            dom = elem;
+        }
+        dom.append.apply(dom, this.$ToDom());
+        this.$mountDom = dom;
+        this.$Rendered();
+        dev_1.default.AddMvvm(this);
+    };
+    MVVM.prototype.$GetMountDom = function () {
+        return this.$mountDom;
+    };
+    MVVM.prototype.$GetAttachedVNode = function () {
+        return this.$attachedVNode;
     };
     MVVM.$compareVNode = function (left, right) {
         if (left.GetAttr('key') != right.GetAttr('key')) {
@@ -402,6 +551,9 @@ var MVVM = /** @class */ (function () {
         }
         return true;
     };
+    MVVM.prototype.GetProps = function () {
+        return this.$props;
+    };
     return MVVM;
 }());
 exports.MVVM = MVVM;
@@ -420,6 +572,7 @@ exports.MVVM = MVVM;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var attribute_1 = __webpack_require__(/*! ./attribute */ "./src/attribute.ts");
+var react_1 = __webpack_require__(/*! ./react */ "./src/react.ts");
 var VNode = /** @class */ (function () {
     function VNode(type) {
         /**虚拟节点名称，即标准html的标签名 */
@@ -433,8 +586,27 @@ var VNode = /** @class */ (function () {
         this.parent = null;
         /**是否已经被销毁 */
         this.isDestroyed = false;
+        /**是否是多dom节点 */
+        this.isMulti = false;
         this.type = type;
     }
+    Object.defineProperty(VNode.prototype, "Doms", {
+        get: function () {
+            if (this.type == "standard" || this.type == "text")
+                return [this.dom];
+            if (this.type == "fragment") {
+                var doms_1 = [];
+                this.children.forEach(function (child) {
+                    doms_1 = doms_1.concat(child.Doms);
+                });
+                return doms_1;
+            }
+            if (this.type == "custom")
+                return this.mvvm.$GetRoot().Doms;
+        },
+        enumerable: true,
+        configurable: true
+    });
     VNode.prototype.SetTag = function (tag) {
         this.tag = tag;
     };
@@ -456,54 +628,62 @@ var VNode = /** @class */ (function () {
     VNode.prototype.GetParent = function () {
         return this.parent;
     };
-    /**在索引为index位置增加一个child,index=-1表示在末尾添加，注意会引发实际的dom操作 */
-    VNode.prototype.InsertVNode = function (child, index) {
-        //dom操作
-        var doms = child.GetDom();
-        if (doms && doms.length > 0) {
-            var sibling_1 = null;
-            while (this.children[index]) {
-                var subdoms = this.children[index].GetDom();
-                if (subdoms.length > 0) {
-                    sibling_1 = subdoms[0];
-                    break;
-                }
-                else {
-                    index++;
-                }
-            }
-            if (sibling_1) {
-                doms.forEach(function (dom) {
-                    sibling_1.parentNode.insertBefore(dom, sibling_1);
-                });
-            }
-            else {
-                var top_1 = this.doms.length > 1 ? this.doms[0].parentNode : this.doms[0];
-                doms.forEach(function (dom) {
-                    top_1.appendChild(dom);
-                });
-            }
-        }
+    VNode.prototype.InsertVNode = function (child, index, domchange) {
+        var _a;
         //虚拟dom操作
         this.children.splice(index, 0, child);
         child.parent = this;
+        if (domchange) {
+            var res_1 = this.GetSiblingDom(child);
+            var doms = child.Doms;
+            if (res_1.isparent) {
+                (_a = res_1.dom).append.apply(_a, doms);
+            }
+            else {
+                doms.forEach(function (dom) {
+                    res_1.dom.parentNode.insertBefore(dom, res_1.dom);
+                });
+            }
+        }
     };
-    /**末尾添加一个孩子节点，不包含dom操作 */
-    VNode.prototype.AppendChild = function (child) {
-        child.parent = this;
-        this.children.push(child);
+    //child是当前节点的子节点，获取child的dom，如果没有就找child后的相邻节点的dom，如果都没有就返回父节点
+    VNode.prototype.GetSiblingDom = function (child) {
+        if (this.type == 'custom') {
+            if (this.parent)
+                return this.parent.GetSiblingDom(this);
+            return { dom: this.mvvm.$GetMountDom(), isparent: true };
+        }
+        var index = this.children.indexOf(child);
+        index++;
+        while (index < this.children.length) {
+            var child_1 = this.children[index];
+            var doms = child_1.Doms;
+            if (doms.length > 0)
+                return { dom: doms[0], isparent: false };
+            index++;
+        }
+        if (this.isMulti)
+            return this.parent.GetSiblingDom(this);
+        return { dom: this.dom, isparent: true };
     };
     /**移除一个孩子节点，注意会引发dom操作 */
     VNode.prototype.RemoveVNode = function (child, index, domchange) {
         if (domchange === void 0) { domchange = true; }
         this.children.splice(index, 1);
         if (domchange) {
-            var doms = child.GetDom();
+            var doms = child.Doms;
             if (doms)
                 doms.forEach(function (dom) {
                     dom.parentNode.removeChild(dom);
                 });
         }
+    };
+    VNode.prototype.SetChildren = function (children) {
+        var _this = this;
+        children.forEach(function (child) {
+            child.parent = _this;
+        });
+        this.children = children;
     };
     VNode.prototype.IsDestroyed = function () {
         return this.isDestroyed;
@@ -524,30 +704,20 @@ var VNode = /** @class */ (function () {
     VNode.prototype.Rendered = function () {
         if (this.type == 'custom')
             this.mvvm.$Rendered();
-        if (this.type == 'standard') {
+        if (this.type == 'standard' || this.type == 'fragment') {
             this.children.forEach(function (child) {
                 child.Rendered();
             });
         }
-    };
-    VNode.prototype.GetDom = function () {
-        return this.doms;
-    };
-    VNode.prototype.GetRef = function (name) {
-        var attr = this.attrs['ref'];
-        if (attr)
-            return this;
-        else {
-            if (this.type != 'custom') {
-                for (var i = 0; i < this.children.length; i++) {
-                    var res = this.children[i].GetRef(name);
-                    if (res) {
-                        return res;
-                    }
+        if (this.attrs['ref'] instanceof react_1.Ref) {
+            if (this.type == "standard")
+                this.attrs['ref'].current = this.dom;
+            else {
+                if (this.type == "custom") {
+                    this.attrs['ref'].current = this.mvvm;
                 }
             }
         }
-        return null;
     };
     VNode.prototype.GetType = function () {
         return this.type;
@@ -572,10 +742,10 @@ var VNode = /** @class */ (function () {
             if (newAttrs[key] == null) {
                 //删除的属性
                 if (isEvent) {
-                    _this.doms[0].removeEventListener(eventName, _this.attrs[key]);
+                    _this.dom.removeEventListener(eventName, _this.attrs[key]);
                 }
                 else {
-                    attribute_1.RemoveAttr(_this.doms[0], key, _this.attrs[key]);
+                    attribute_1.RemoveAttr(_this.dom, key, _this.attrs[key]);
                 }
             }
             else {
@@ -587,18 +757,18 @@ var VNode = /** @class */ (function () {
                     var newStyle = newAttrs.style;
                     for (var key_1 in oldStyle) {
                         if (!newStyle[key_1]) {
-                            _this.doms[0].style[key_1] = '';
+                            _this.dom.style[key_1] = '';
                         }
                         else {
                             if (newStyle[key_1] != oldStyle[key_1]) {
-                                _this.doms[0].style[key_1] =
+                                _this.dom.style[key_1] =
                                     newStyle[key_1];
                             }
                         }
                     }
                     for (var key_2 in newStyle) {
                         if (!oldStyle[key_2]) {
-                            _this.doms[0].style[key_2] =
+                            _this.dom.style[key_2] =
                                 newStyle[key_2];
                         }
                     }
@@ -606,14 +776,14 @@ var VNode = /** @class */ (function () {
                 }
                 if (isEvent) {
                     if (_this.attrs[key] != newAttrs[key]) {
-                        _this.doms[0].removeEventListener(eventName, _this.attrs[key]);
-                        _this.doms[0].addEventListener(eventName, newAttrs[key]);
+                        _this.dom.removeEventListener(eventName, _this.attrs[key]);
+                        _this.dom.addEventListener(eventName, newAttrs[key]);
                     }
                 }
                 else {
                     if (_this.attrs[key] != newAttrs[key]) {
-                        attribute_1.RemoveAttr(_this.doms[0], key, _this.attrs[key]);
-                        attribute_1.ApplyAttr(_this.doms[0], key, newAttrs[key]);
+                        attribute_1.RemoveAttr(_this.dom, key, _this.attrs[key]);
+                        attribute_1.ApplyAttr(_this.dom, key, newAttrs[key]);
                     }
                 }
             }
@@ -624,10 +794,10 @@ var VNode = /** @class */ (function () {
             if (_this.attrs[key] == null) {
                 //新增属性
                 if (isEvent) {
-                    _this.doms[0].addEventListener(eventName, newAttrs[key]);
+                    _this.dom.addEventListener(eventName, newAttrs[key]);
                 }
                 else {
-                    attribute_1.ApplyAttr(_this.doms[0], key, newAttrs[key]);
+                    attribute_1.ApplyAttr(_this.dom, key, newAttrs[key]);
                 }
             }
         });
@@ -643,65 +813,63 @@ var VNode = /** @class */ (function () {
         }
         if (this.type == 'standard') {
             var innerhtmls_1 = [];
-            if (this.tag != 'fragment') {
-                innerhtmls_1.push("<" + this.tag);
-                Object.keys(this.attrs).forEach(function (key) {
-                    var attrStr = attribute_1.SerializeAttr(key, _this.attrs[key]);
-                    if (attrStr)
-                        innerhtmls_1.push(' ' + attrStr);
-                });
-                innerhtmls_1.push('>');
-            }
+            innerhtmls_1.push("<" + this.tag);
+            Object.keys(this.attrs).forEach(function (key) {
+                var attrStr = attribute_1.SerializeAttr(key, _this.attrs[key]);
+                if (attrStr)
+                    innerhtmls_1.push(' ' + attrStr);
+            });
+            innerhtmls_1.push('>');
             this.children.forEach(function (child) {
                 var res = child.ToHtml();
                 innerhtmls_1.push(res);
             });
-            if (this.tag != 'fragment')
-                innerhtmls_1.push("</" + this.tag + ">");
+            innerhtmls_1.push("</" + this.tag + ">");
             return innerhtmls_1.join('');
+        }
+        if (this.type == 'fragment') {
+            var innerhtmls_2 = [];
+            this.children.forEach(function (child) {
+                var res = child.ToHtml();
+                innerhtmls_2.push(res);
+            });
+            return innerhtmls_2.join('');
         }
     };
     VNode.prototype.ToDom = function () {
         var _this = this;
-        if (typeof document == 'undefined') {
-            return null;
-        }
         if (this.type == 'custom') {
             var doms = this.mvvm.$ToDom();
-            this.doms = doms;
             return doms;
         }
         if (this.type == 'standard') {
-            if (this.tag != 'fragment') {
-                var elem_1 = document.createElement(this.tag);
-                this.doms = [elem_1];
-                Object.keys(this.attrs).forEach(function (key) {
-                    var eventName = attribute_1.GetEventAttrName(key);
-                    if (eventName) {
-                        elem_1.addEventListener(eventName, _this.attrs[key]);
-                    }
-                    else
-                        attribute_1.ApplyAttr(elem_1, key, _this.attrs[key]);
-                });
-                this.children.forEach(function (child) {
-                    var doms = child.ToDom();
-                    doms.forEach(function (dom) { return elem_1.appendChild(dom); });
-                });
-                return [elem_1];
-            }
-            else {
-                var children_1 = [];
-                this.children.forEach(function (child) {
-                    var doms = child.ToDom();
-                    children_1 = children_1.concat(doms);
-                });
-                this.doms = children_1;
-                return children_1;
-            }
+            var elem_1 = document.createElement(this.tag);
+            this.dom = elem_1;
+            Object.keys(this.attrs).forEach(function (key) {
+                var eventName = attribute_1.GetEventAttrName(key);
+                if (eventName) {
+                    elem_1.addEventListener(eventName, _this.attrs[key]);
+                }
+                else
+                    attribute_1.ApplyAttr(elem_1, key, _this.attrs[key]);
+            });
+            this.children.forEach(function (child) {
+                var doms = child.ToDom();
+                doms.forEach(function (dom) { return elem_1.appendChild(dom); });
+            });
+            return [elem_1];
+        }
+        if (this.type == 'fragment') {
+            var children_1 = [];
+            this.children.forEach(function (child) {
+                var doms = child.ToDom();
+                children_1 = children_1.concat(doms);
+            });
+            return children_1;
         }
         if (this.type == 'text') {
             var text = document.createTextNode(this.text);
-            this.doms = [text];
+            this.dom = text;
             return [text];
         }
     };
@@ -732,7 +900,7 @@ var VNode = /** @class */ (function () {
     };
     VNode.prototype.AttachDom = function (dom) {
         var _this = this;
-        this.doms = [dom];
+        this.dom = dom;
         Object.keys(this.attrs).forEach(function (key) {
             var eventName = attribute_1.GetEventAttrName(key);
             if (eventName) {
@@ -740,8 +908,34 @@ var VNode = /** @class */ (function () {
             }
         });
     };
-    VNode.prototype.SetDom = function (doms) {
-        this.doms = doms;
+    VNode.prototype.GetNearestAncestorMvvm = function () {
+        if (this.type == "custom")
+            return this.mvvm;
+        return this.parent && this.parent.GetNearestAncestorMvvm();
+    };
+    VNode.prototype.GetFirstChildMvvm = function () {
+        if (this.type == "custom")
+            return this.mvvm;
+        for (var i = 0; i < this.children.length; i++) {
+            var mvvm = this.children[i].GetFirstChildMvvm();
+            if (mvvm)
+                return mvvm;
+        }
+        return null;
+    };
+    VNode.prototype.GetAllMvvm = function () {
+        if (this.type == "custom")
+            return [this.mvvm];
+        if (this.type == 'text')
+            return [];
+        if (this.type == "standard" || this.type == "fragment") {
+            var total_1 = [];
+            this.children.forEach(function (child) {
+                total_1 = total_1.concat(child.GetAllMvvm());
+            });
+            return total_1;
+        }
+        return [];
     };
     return VNode;
 }());
@@ -782,6 +976,9 @@ var applyAttr = {
         return true;
     },
     key: function (elem, value) {
+        return true;
+    },
+    ref: function (elem, value) {
         return true;
     },
     value: function (elem, value) {
@@ -835,6 +1032,9 @@ var serializeAttr = (_a = {
         },
         key: function (value) {
             return '';
+        },
+        ref: function (value) {
+            return '';
         }
     },
     _a[exports.VNODE_ID] = function (value) {
@@ -883,6 +1083,108 @@ function GetEventAttrName(attr) {
     return null;
 }
 exports.GetEventAttrName = GetEventAttrName;
+
+
+/***/ }),
+
+/***/ "./src/dev.ts":
+/*!********************!*\
+  !*** ./src/dev.ts ***!
+  \********************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var Dev = /** @class */ (function () {
+    function Dev() {
+        this.roots = [];
+        this.listeners = [];
+    }
+    Dev.prototype.Subscribe = function (listener, init) {
+        if (this.listeners.indexOf(listener) == -1) {
+            if (this.roots) {
+                init(this.toJson());
+            }
+            this.listeners.push(listener);
+        }
+    };
+    Dev.prototype.AddMvvm = function (mvvm) {
+        var _this = this;
+        this.roots.push(mvvm);
+        this.listeners.forEach(function (item) {
+            item("new", _this.getMvvm(mvvm.$GetAttachedVNode()));
+        });
+    };
+    Dev.prototype.Unsubscribe = function (listener) {
+        this.listeners = this.listeners.filter(function (item) { return item != listener; });
+    };
+    Dev.prototype.toJson = function () {
+        var _this = this;
+        var mvvms = [];
+        if (this.roots) {
+            this.roots.forEach(function (root) {
+                mvvms = mvvms.concat(_this.getMvvm(root.$GetAttachedVNode()));
+            });
+        }
+        return mvvms;
+    };
+    Dev.prototype.getMvvm = function (vnode) {
+        var _this = this;
+        if (vnode.GetType() == "standard" || vnode.GetType() == 'text') {
+            var children_1 = [];
+            vnode.GetChildren().forEach(function (child) {
+                children_1 = children_1.concat(_this.getMvvm(child));
+            });
+            return children_1;
+        }
+        if (vnode.GetType() == "fragment") {
+            var vnodeObj_1 = { name: "fragment", data: null, props: null, children: [] };
+            vnode.GetChildren().forEach(function (child) {
+                var res = _this.getMvvm(child);
+                if (res)
+                    vnodeObj_1.children = vnodeObj_1.children.concat(res);
+            });
+            return [vnodeObj_1];
+        }
+        if (vnode.GetType() == "custom") {
+            var name_1 = vnode.GetInstance().constructor.name;
+            var data_1 = {};
+            Object.keys(vnode.GetInstance()).forEach(function (key) {
+                if (!key.startsWith("$") || key == "$id") {
+                    data_1[key] = vnode.GetInstance()[key];
+                }
+            });
+            var vnodeObj = { name: name_1, data: data_1, props: vnode.GetInstance().GetProps(), children: this.getMvvm(vnode.GetInstance().$GetRoot()) };
+            return [vnodeObj];
+        }
+        throw new Error("vnode type error");
+    };
+    Dev.prototype.OnChange = function (type, mvvms, extra) {
+        var _this = this;
+        var instances = [];
+        mvvms.forEach(function (mvvm) {
+            var instance = { name: mvvm.constructor.name, props: mvvm.GetProps(), data: {}, children: [] };
+            Object.keys(mvvm).forEach(function (key) {
+                if (!key.startsWith("$") || key == "$id") {
+                    instance.data[key] = mvvm[key];
+                }
+            });
+            if (type == "new") {
+                instance.children = _this.getMvvm(mvvm.$GetRoot());
+            }
+            instances.push(instance);
+        });
+        this.listeners.forEach(function (listener) {
+            listener(type, instances, extra);
+        });
+    };
+    return Dev;
+}());
+var dev = new Dev();
+window.__noreact_dev = dev;
+exports.default = dev;
 
 
 /***/ }),
@@ -1054,9 +1356,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var MVVM_1 = __webpack_require__(/*! ./MVVM */ "./src/MVVM.ts");
 exports.MVVM = MVVM_1.MVVM;
 var react_1 = __webpack_require__(/*! ./react */ "./src/react.ts");
-exports.React = react_1.default;
+exports.React = react_1.React;
+exports.Ref = react_1.Ref;
+exports.Fragment = react_1.Fragment;
 var VNode_1 = __webpack_require__(/*! ./VNode */ "./src/VNode.ts");
 exports.VNode = VNode_1.VNode;
+var dev_1 = __webpack_require__(/*! ./dev */ "./src/dev.ts");
+exports.Dev = dev_1.default;
 
 
 /***/ }),
@@ -1072,17 +1378,13 @@ exports.VNode = VNode_1.VNode;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var VNode_1 = __webpack_require__(/*! ./VNode */ "./src/VNode.ts");
-var attribute_1 = __webpack_require__(/*! ./attribute */ "./src/attribute.ts");
+var MVVM_1 = __webpack_require__(/*! ./MVVM */ "./src/MVVM.ts");
 var isInBrowser = new Function('try {return this===window;}catch(e){ return false;}');
-var React = /** @class */ (function () {
-    function React() {
-        this.counter = 0;
+var NoReact = /** @class */ (function () {
+    function NoReact() {
         this.mode = 'deep';
     }
-    React.prototype.ResetCounter = function () {
-        this.counter = 0;
-    };
-    React.prototype.createElement = function (Elem, attrs) {
+    NoReact.prototype.createElement = function (Elem, attrs) {
         var children = [];
         for (var _i = 2; _i < arguments.length; _i++) {
             children[_i - 2] = arguments[_i];
@@ -1090,34 +1392,37 @@ var React = /** @class */ (function () {
         var allchildren = [];
         this.flatten('', children, allchildren);
         if (typeof Elem == 'string') {
-            var vnode_1 = new VNode_1.VNode('standard');
-            vnode_1.SetTag(Elem);
-            if (!isInBrowser()) {
-                vnode_1.SetAttr(attribute_1.VNODE_ID, this.counter);
-                this.counter++;
-            }
+            var vnode = new VNode_1.VNode('standard');
+            vnode.SetTag(Elem);
+            vnode.isMulti = false;
             if (attrs != null) {
                 for (var key in attrs) {
-                    vnode_1.SetAttr(key, attrs[key]);
+                    vnode.SetAttr(key, attrs[key]);
                 }
             }
-            allchildren.forEach(function (child) {
-                vnode_1.AppendChild(child);
-            });
-            return vnode_1;
+            vnode.SetChildren(allchildren);
+            return vnode;
         }
-        else {
-            var vnode = new VNode_1.VNode('custom');
-            if (!isInBrowser()) {
-                vnode.SetAttr(attribute_1.VNODE_ID, this.counter);
-                this.counter++;
+        if (Elem == Fragment) {
+            var vnode = new VNode_1.VNode('fragment');
+            vnode.isMulti = true;
+            vnode.SetChildren(allchildren);
+            if (attrs != null) {
+                for (var key in attrs) {
+                    vnode.SetAttr(key, attrs[key]);
+                }
             }
+            return vnode;
+        }
+        if (Elem.prototype instanceof MVVM_1.MVVM) {
+            var vnode = new VNode_1.VNode('custom');
             var mvvm = new Elem(attrs);
             vnode.SetMvvm(mvvm);
             mvvm.$SetChildren(allchildren);
             mvvm.$AttachVNode(vnode);
             if (this.mode == 'deep') {
-                mvvm.$DoRender();
+                var root = mvvm.$DoRender();
+                vnode.isMulti = root.isMulti;
             }
             if (attrs != null) {
                 for (var key in attrs) {
@@ -1127,7 +1432,7 @@ var React = /** @class */ (function () {
             return vnode;
         }
     };
-    React.prototype.flatten = function (prefix, children, res) {
+    NoReact.prototype.flatten = function (prefix, children, res) {
         var _this = this;
         children.forEach(function (child, index) {
             if (child == null)
@@ -1155,12 +1460,29 @@ var React = /** @class */ (function () {
             }
         });
     };
-    React.prototype.ChangeMode = function (mode) {
+    NoReact.prototype.ChangeMode = function (mode) {
         this.mode = mode;
     };
-    return React;
+    return NoReact;
 }());
-exports.default = new React();
+var Fragment = /** @class */ (function () {
+    function Fragment() {
+    }
+    return Fragment;
+}());
+exports.Fragment = Fragment;
+var Ref = /** @class */ (function () {
+    function Ref() {
+    }
+    return Ref;
+}());
+exports.Ref = Ref;
+exports.React = new NoReact();
+var counter = 0;
+function GetId() {
+    return counter++;
+}
+exports.GetId = GetId;
 
 
 /***/ }),
@@ -1200,12 +1522,22 @@ function InsertQueue(mvvm) {
 exports.InsertQueue = InsertQueue;
 function Refresh() {
     while (true) {
+        tempQueue.sort(function (m1, m2) {
+            if (m1.$IsParentOf(m2)) {
+                return -1;
+            }
+            if (m2.$IsParentOf(m1)) {
+                return 1;
+            }
+            return 0;
+        });
         if (counter > maxLoop) {
             throw new Error("refresh loop more than " + maxLoop);
         }
         counter++;
         tempQueue.forEach(function (root) {
-            root.$ApplyRefresh();
+            if (!root.$IsDestroyed() && root.$GetDirty())
+                root.$ApplyRefresh();
         });
         if (queue.length == 0)
             break;

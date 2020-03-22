@@ -21,7 +21,7 @@ let files = fs.readdirSync(dir);
 files.forEach(file => {
     if (file.endsWith('.tsx')) {
         let name = file.substr(0, file.length - 4);
-        entries[name] = path.resolve(dir, file);
+        if (name == 'children') entries[name] = path.resolve(dir, file);
     }
 });
 

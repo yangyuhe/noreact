@@ -341,4 +341,33 @@ export class VNode {
             }
         });
     }
+    GetNearestAncestorMvvm(): MVVM<any> {
+        if (this.type == "custom")
+            return this.mvvm;
+        return this.parent && this.parent.GetNearestAncestorMvvm();
+    }
+    GetFirstChildMvvm(): MVVM<any> {
+        if (this.type == "custom")
+            return this.mvvm;
+        for (let i = 0; i < this.children.length; i++) {
+            let mvvm = this.children[i].GetFirstChildMvvm();
+            if (mvvm)
+                return mvvm;
+        }
+        return null;
+    }
+    GetAllMvvm(): MVVM<any>[] {
+        if (this.type == "custom")
+            return [this.mvvm];
+        if (this.type == 'text')
+            return [];
+        if (this.type == "standard" || this.type == "fragment") {
+            let total = [];
+            this.children.forEach(child => {
+                total = total.concat(child.GetAllMvvm());
+            });
+            return total;
+        }
+        return [];
+    }
 }
