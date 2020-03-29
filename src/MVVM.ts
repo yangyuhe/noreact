@@ -1,11 +1,11 @@
 import { Diff } from './diff';
-import { RegisterEvent, TriggerEvent } from './event-center';
+import { RegisterEvent, TriggerEvent, UnregisterEvent } from './event-center';
 import { VNode } from './VNode';
-import { React, GetId } from './react';
+import { React, GetId, Ref } from './react';
 import { InsertQueue } from './refresh';
 import Dev from "./dev";
 
-export abstract class MVVM<T> {
+export abstract class MVVM {
     private $root: VNode;
     private $attachedVNode: VNode;
     /**组件内部的事件注册中心 */
@@ -13,49 +13,57 @@ export abstract class MVVM<T> {
     /**该组件拥有的子级虚拟树 */
     protected $children: VNode[] = [];
     private $isdirty = false;
-    protected $props: T;
+    private $props: any;
     private $hasRenderedDom = false;
     private $mountDom: HTMLElement = null;
     private $isDestroyed = false;
     protected $id: number;
 
-    constructor($props: T) {
-        if (toString.call($props) == '[object Object]') {
+    constructor($props?: any) {
+        if ($props != undefined)
             this.$props = $props;
-        } else {
-            (this.$props as any) = {};
-        }
+        else
+            this.$props = {};
+        this.$watchObject(this.$props);
         this.$id = GetId();
     }
-    /**初始化函数 */
-    protected $onInit(): void { }
     /**渲染完成后该方法会被调用，此时elem成员变量才可以被访问到 */
-    protected $onRendered(): void { }
+    protected $didMounted(): void { }
     /**销毁函数 */
-    protected $onDestroyed(): void { }
+    protected $willUnMount(): void { }
     /**该组建的渲染方法，该方法必须返回一个虚拟树 */
     protected abstract $Render(): VNode;
 
     /**向所有父级发送消息 */
-    protected $emitUp(event: string, data?: any) {
-        this.$root.EmitUp(event, data, this);
+    protected $emitUp(event: string, ...data: any[]) {
+        this.$root.EmitUp(event, ...data);
     }
     /**向所有子级发送消息 */
-    protected $emitDown(event: string, data?: any) {
-        this.$root.EmitDown(event, data, this);
+    protected $emitDown(event: string, ...data: any[]) {
+        this.$root.EmitDown(event, ...data);
     }
     /**监听事件 */
     protected $on(
         event: string,
-        callback: (data: any, target: MVVM<any>) => void
+        callback: Function
     ) {
         if (!this.$eventRegister[event]) this.$eventRegister[event] = [];
         this.$eventRegister[event].push(callback);
         RegisterEvent(event, callback);
     }
+    protected $cancel(event, callback?: Function) {
+        if (!callback) {
+            this.$eventRegister[event] = [];
+        } else {
+            if (this.$eventRegister[event]) {
+                this.$eventRegister[event] = this.$eventRegister[event].filter(item => item !== callback);
+            }
+        }
+        UnregisterEvent(event, callback);
+    }
     /**发送一个全局事件 */
-    protected $broadcast(event: string, data?: any) {
-        TriggerEvent(event, this, data);
+    protected $broadcast(event: string, ...data: any[]) {
+        TriggerEvent(event, ...data);
     }
     /**触发该组件的某个事件监听 */
     $Trigger(event, ...data: any[]) {
@@ -65,6 +73,11 @@ export abstract class MVVM<T> {
         }
     }
     $ToDom(): (HTMLElement | Text)[] {
+        if (this.$isdirty) {
+            //remount时可能需要
+            this.$root = this.$Render();
+            this.$isdirty = false;
+        }
         this.$hasRenderedDom = true;
         if (!this.$root) this.$DoRender();
         let doms = this.$root.ToDom();
@@ -142,10 +155,9 @@ export abstract class MVVM<T> {
     }
 
     $DoRender() {
-        this.$onInit();
         let keys = [];
         Object.keys(this).forEach(key => {
-            if (!key.startsWith('$')) keys.push(key);
+            if (!key.startsWith('$') && this[key] !== this.$props) keys.push(key);
         });
         keys.length > 0 && this.$watchObject(this, keys);
 
@@ -162,8 +174,8 @@ export abstract class MVVM<T> {
         return this.$root;
     }
     private $watchObject(obj: any, keys?: string[]) {
-        if (toString.call(obj) == '[object Object]' || toString.call(obj) == '[object Array]') {
-            let watchers: MVVM<any>[] = [];
+        if (!(obj instanceof Ref) && !(obj instanceof VNode) && !(obj instanceof MVVM && (!keys || keys.length == 0)) && toString.call(obj) == '[object Object]' || toString.call(obj) == '[object Array]') {
+            let watchers: MVVM[] = [];
             ((keys && keys.length > 0 && keys) || Object.keys(obj)).forEach(key => {
                 let descriptor = Object.getOwnPropertyDescriptor(obj, key);
                 if (descriptor && descriptor.configurable) {
@@ -199,14 +211,14 @@ export abstract class MVVM<T> {
             return;
         }
     }
-    private $watchArray(arr, watchers: MVVM<any>[]) {
+    private $watchArray(arr, watchers: MVVM[]) {
         this.$overwriteArrayMethods(arr, 'pop', watchers);
         this.$overwriteArrayMethods(arr, 'push', watchers);
         this.$overwriteArrayMethods(arr, 'splice', watchers);
         this.$overwriteArrayMethods(arr, 'unshift', watchers);
         this.$overwriteArrayMethods(arr, 'shift', watchers);
     }
-    private $overwriteArrayMethods(arr: any[], methodname: string, watchers: MVVM<any>[]) {
+    private $overwriteArrayMethods(arr: any[], methodname: string, watchers: MVVM[]) {
         let method = arr[methodname];
         if (typeof method == 'function') {
             let descriptor = Object.getOwnPropertyDescriptor(arr, methodname);
@@ -223,20 +235,17 @@ export abstract class MVVM<T> {
     }
     private $useOld(oldNode: VNode, newNode: VNode) {
         if (oldNode.GetType() == 'custom') {
-            let instance = oldNode.GetInstance();
-            let newInstance = newNode.GetInstance();
-            if (instance.$isdirty) {
-                instance.$props = newInstance.$props;
+            let instance = oldNode.GetMvvm();
+            let newInstance = newNode.GetMvvm();
+            instance.$resetProps(newInstance.$props);
+
+            let samechildren = (instance.$children === newInstance.$children) || instance.$children.length == 0 && newInstance.$children.length == 0;
+            if (!samechildren) {
                 instance.$SetChildren(newInstance.$children);
+                instance.$isdirty = true;
+            }
+            if (instance.$isdirty) {
                 instance.$ApplyRefresh();
-            } else {
-                let same = this.$compareProps(instance.$props, newInstance.$props) && this.$compareChildren(instance.$children, newInstance.$children);
-                if (!same) {
-                    instance.$props = newInstance.$props;
-                    instance.$SetChildren(newInstance.$children);
-                    instance.$isdirty = true;
-                    instance.$ApplyRefresh();
-                }
             }
             return;
         }
@@ -254,71 +263,17 @@ export abstract class MVVM<T> {
             return;
         }
     }
-    $IsParentOf(mvvm: MVVM<any>) {
+    $IsParentOf(mvvm: MVVM) {
         let parentNode = mvvm.$attachedVNode.GetParent();
         while (parentNode) {
-            if (parentNode.GetInstance() == this) {
+            if (parentNode.GetMvvm() == this) {
                 return true;
             }
             parentNode = parentNode.GetParent();
         }
         return false;
     }
-    /**
-     * 对比属性值，相同返回true,不相同返回false
-     */
-    private $compareProps(ps1: { [key: string]: any }, ps2: { [key: string]: any }) {
-        if (toString.call(ps1) == "[object Object]" && toString.call(ps2) == "[object Object]") {
-            let keys1 = Object.keys(ps1);
-            let keys2 = Object.keys(ps2);
-            let map = {};
-            keys1.forEach(key => {
-                map[key] = 1;
-            });
-            keys2.forEach(key => {
-                if (!map[key])
-                    map[key] = 1;
-                else
-                    map[key]++;
-            });
-            let different = false;
-            Object.keys(map).forEach(key => {
-                if (map[key] != 2) {
-                    different = true;
-                }
-            });
-            if (different)
-                return false;
-            else {
-                for (let i = 0; i < keys1.length; i++) {
-                    let key = keys1[i];
-                    let res = this.$compareProp(ps1[key], ps2[key]);
-                    if (!res)
-                        return false;
-                }
-                return true;
-            }
-        }
-        return false;
-    }
-    private $compareChildren(c1, c2) {
-        if (c1 instanceof Array && c2 instanceof Array && c1.length == 0 && c2.length == 0)
-            return true;
-        return c1 === c2;
-    }
-    private $compareProp(p1, p2) {
-        if (typeof p1 == 'function' && typeof p2 == 'function') {
-            if (typeof p1.prototype != 'undefined' && typeof p2.prototype != 'undefined') {
-                if (typeof p1.toString == 'function' && typeof p2.toString == 'function' && p1.toString() == p2.toString()) {
-                    return true;
-                }
-                return false;
-            }
-        }
-        if (p1 !== p2)
-            return false;
-        return true;
-    }
+
     private $diff(olds: VNode[], news: VNode[], parent: VNode) {
         let opers = Diff(olds, news, MVVM.$compareVNode);
         let index = 0;
@@ -333,8 +288,9 @@ export abstract class MVVM<T> {
                     this.$useOld(item.newValueOrigin, item.newValue);
                     parent.InsertVNode(item.newValueOrigin, index, this.$hasRenderedDom);
                 } else {
-                    if (this.$hasRenderedDom)
+                    if (this.$hasRenderedDom) {
                         item.newValue.ToDom();
+                    }
                     parent.InsertVNode(item.newValue, index, this.$hasRenderedDom);
                     this.$devNew(item.newValue, index);
 
@@ -395,14 +351,52 @@ export abstract class MVVM<T> {
                 Dev.OnChange("new", mvvms, { isparent: true, id: parent.GetNearestAncestorMvvm().$id });
         }
     }
+    private $resetProps(props) {
+        if (this.$props && Object.prototype.toString.call(this.$props) == "[object Object]") {
+            if (props && Object.prototype.toString.call(props) == "[object Object]") {
+                let oldkeys = Object.keys(this.$props);
+                let newkeys = Object.keys(props);
+                oldkeys.forEach(key => {
+                    if (newkeys.indexOf(key) != -1) {
+                        this.$setProp(key, props[key]);
+                    } else {
+                        this.$props[key] = undefined;
+                    }
+                });
+                newkeys.forEach(key => {
+                    if (oldkeys.indexOf(key) == -1) {
+                        this.$props[key] = props[key];
+                        this.$watchObject(this.$props, [key]);
+                    }
+                });
+            }
+        }
+    }
+    private $setProp(key, value) {
+        let oldvalue = this.$props[key];
+        if (typeof oldvalue == 'function' && typeof value == 'function') {
+            if (typeof oldvalue.prototype != 'undefined' && typeof value.prototype != 'undefined') {
+                if (typeof oldvalue.toString == 'function' && typeof value.toString == 'function' && oldvalue.toString() == value.toString()) {
+                    return;
+                }
+            }
+            this.$props[key] = value;
+            return;
+        }
+        if (Object.prototype.toString.call(oldvalue) == '[object RegExp]' && Object.prototype.toString.call(value) == '[object RegExp]' && oldvalue.toString() == value.toString()) {
+            return;
+        }
+        this.$props[key] = value;
+    }
 
     $Rendered() {
+        this.$isDestroyed = false;
         this.$root.Rendered();
-        this.$onRendered();
+        this.$didMounted();
     }
     $Destroy() {
         this.$isDestroyed = true;
-        this.$onDestroyed();
+        this.$willUnMount();
         this.$root.Destroy();
     }
     $IsDestroyed() {
@@ -438,8 +432,8 @@ export abstract class MVVM<T> {
         }
         if (left.GetType() == 'custom') {
             if (
-                left.GetInstance().constructor !=
-                right.GetInstance().constructor
+                left.GetMvvm().constructor !=
+                right.GetMvvm().constructor
             ) {
                 return false;
             }
@@ -452,7 +446,7 @@ export abstract class MVVM<T> {
         }
         return true;
     }
-    GetProps() {
+    $GetProps() {
         return this.$props;
     }
 }

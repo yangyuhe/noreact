@@ -12,9 +12,10 @@ class Person {
     }
 }
 let person = new Person("foo", 0);
-class PersonCard extends MVVM<{}>{
+class PersonCard extends MVVM {
     person: Person = null;
-    $onInit() {
+    constructor() {
+        super();
         this.person = person;
     }
     $Render() {
@@ -25,12 +26,13 @@ class PersonCard extends MVVM<{}>{
 
     }
 }
-class UserCenter extends MVVM<{}>{
+class UserCenter extends MVVM {
     person: Person = null;
-    $onInit() {
+    constructor() {
+        super();
         this.person = person;
     }
-    $onDestroyed() {
+    $willUnMount() {
         console.log("user destroyed")
     }
     $Render() {
@@ -41,9 +43,10 @@ class UserCenter extends MVVM<{}>{
         </Fragment>
     }
 }
-class Operation extends MVVM<{}>{
+class Operation extends MVVM {
     person: Person = null;
-    $onInit() {
+    constructor() {
+        super();
         this.person = person;
     }
     $Render() {
@@ -53,7 +56,7 @@ class Operation extends MVVM<{}>{
         </Fragment>
     }
 }
-export class Tabs extends MVVM<{}>{
+export class Tabs extends MVVM {
     curTab = 'oper';
     $Render() {
         return <div className="tabs-container">

@@ -9,7 +9,7 @@ interface Instance {
 }
 type Listener = ((type: 'new' | 'update' | 'delete', mvvmjson: Instance[], extra?: { isparent: boolean, id: number }) => void);
 class Dev {
-    roots: MVVM<any>[] = [];
+    roots: MVVM[] = [];
     listeners: Listener[] = [];
     Subscribe(listener: Listener, init: (mvvms: Instance[]) => void) {
         if (this.listeners.indexOf(listener) == -1) {
@@ -19,7 +19,7 @@ class Dev {
             this.listeners.push(listener);
         }
     }
-    AddMvvm(mvvm: MVVM<any>) {
+    AddMvvm(mvvm: MVVM) {
         this.roots.push(mvvm);
         this.listeners.forEach(item => {
             item("new", this.getMvvm(mvvm.$GetAttachedVNode()));
@@ -38,41 +38,35 @@ class Dev {
         return mvvms;
     }
     getMvvm(vnode: VNode): Instance[] {
-        if (vnode.GetType() == "standard" || vnode.GetType() == 'text') {
+        if (vnode.GetType() == 'text')
+            return [];
+        if (vnode.GetType() == "standard" || vnode.GetType() == 'fragment') {
             let children = [];
             vnode.GetChildren().forEach(child => {
                 children = children.concat(this.getMvvm(child));
             });
             return children;
         }
-        if (vnode.GetType() == "fragment") {
-            let vnodeObj = { name: "fragment", data: null, props: null, children: [] };
-            vnode.GetChildren().forEach(child => {
-                let res = this.getMvvm(child);
-                if (res)
-                    vnodeObj.children = vnodeObj.children.concat(res);
-            });
-            return [vnodeObj];
-        }
         if (vnode.GetType() == "custom") {
-            let name = vnode.GetInstance().constructor.name;
+            let mvvm = vnode.GetMvvm();
+            let name = mvvm.constructor.name;
             let data = {};
-            Object.keys(vnode.GetInstance()).forEach(key => {
-                if (!key.startsWith("$") || key == "$id") {
-                    data[key] = vnode.GetInstance()[key];
+            Object.keys(mvvm).forEach(key => {
+                if (!key.startsWith("$") && mvvm[key] !== mvvm.$GetProps() || key == "$id") {
+                    data[key] = mvvm[key];
                 }
             });
-            let vnodeObj = { name: name, data: data, props: vnode.GetInstance().GetProps(), children: this.getMvvm(vnode.GetInstance().$GetRoot()) };
+            let vnodeObj = { name: name, data: data, props: vnode.GetMvvm().$GetProps(), children: this.getMvvm(vnode.GetMvvm().$GetRoot()) };
             return [vnodeObj];
         }
         throw new Error("vnode type error");
     }
-    OnChange(type: 'new' | 'update' | 'delete', mvvms: MVVM<any>[], extra?: { isparent: boolean, id: number }) {
+    OnChange(type: 'new' | 'update' | 'delete', mvvms: MVVM[], extra?: { isparent: boolean, id: number }) {
         let instances: Instance[] = [];
         mvvms.forEach(mvvm => {
-            let instance: Instance = { name: mvvm.constructor.name, props: mvvm.GetProps(), data: {}, children: [] };
+            let instance: Instance = { name: mvvm.constructor.name, props: mvvm.$GetProps(), data: {}, children: [] };
             Object.keys(mvvm).forEach(key => {
-                if (!key.startsWith("$") || key == "$id") {
+                if (!key.startsWith("$") && mvvm[key] !== mvvm.$GetProps() || key == "$id") {
                     instance.data[key] = mvvm[key];
                 }
             });

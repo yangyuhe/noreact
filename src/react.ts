@@ -1,20 +1,19 @@
 import { VNode } from './VNode';
 import { MVVM } from './MVVM';
-import { VNODE_ID } from './attribute';
 
 const isInBrowser = new Function(
     'try {return this===window;}catch(e){ return false;}'
 );
 class NoReact {
     private mode: 'deep' | 'shallow' = 'deep';
-    public target: MVVM<any>;
+    public target: MVVM;
     createElement(
         Elem: string | (typeof MVVM) | typeof Fragment,
         attrs: { [key: string]: any },
         ...children: (VNode | VNode[] | string)[]
     ): VNode {
         let allchildren: VNode[] = [];
-        this.flatten('', children, allchildren);
+        this.flatten('$', children, allchildren);
 
         if (typeof Elem == 'string') {
             let vnode: VNode = new VNode('standard');
@@ -22,9 +21,9 @@ class NoReact {
             vnode.isMulti = false;
 
             if (attrs != null) {
-                for (let key in attrs) {
+                Object.keys(attrs).forEach(key => {
                     vnode.SetAttr(key, attrs[key]);
-                }
+                })
             }
             vnode.SetChildren(allchildren);
             return vnode;
@@ -34,15 +33,15 @@ class NoReact {
             vnode.isMulti = true;
             vnode.SetChildren(allchildren);
             if (attrs != null) {
-                for (let key in attrs) {
+                Object.keys(attrs).forEach(key => {
                     vnode.SetAttr(key, attrs[key]);
-                }
+                })
             }
             return vnode;
         }
         if ((Elem as Function).prototype instanceof MVVM) {
             let vnode = new VNode('custom');
-            let mvvm = new (Elem as any)(attrs) as MVVM<any>;
+            let mvvm = new (Elem as any)(attrs) as MVVM;
 
             vnode.SetMvvm(mvvm);
             mvvm.$SetChildren(allchildren);
@@ -53,9 +52,9 @@ class NoReact {
             }
 
             if (attrs != null) {
-                for (let key in attrs) {
+                Object.keys(attrs).forEach(key => {
                     vnode.SetAttr(key, attrs[key]);
-                }
+                })
             }
             return vnode;
         }
@@ -91,12 +90,12 @@ class NoReact {
 export class Fragment {
 
 }
-export class Ref {
-    current: HTMLElement | MVVM<any>;
+export class Ref<T> {
+    current: T;
 }
 export const React = new NoReact();
 
-let counter=0;
-export function GetId(){
+let counter = 0;
+export function GetId() {
     return counter++;
 }

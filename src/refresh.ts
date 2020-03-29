@@ -1,12 +1,12 @@
 import { MVVM } from './MVVM';
 
-let queue: MVVM<any>[] = [];
-let tempQueue: MVVM<any>[] = [];
+let queue: MVVM[] = [];
+let tempQueue: MVVM[] = [];
 let maxLoop = 10;
 let counter = 0;
 
 let promise: Promise<void>;
-export function InsertQueue(mvvm: MVVM<any>) {
+export function InsertQueue(mvvm: MVVM) {
     if (queue.indexOf(mvvm) != -1) {
         return;
     }
@@ -26,7 +26,7 @@ export function InsertQueue(mvvm: MVVM<any>) {
 }
 function Refresh() {
     while (true) {
-        tempQueue.sort((m1: MVVM<any>, m2: MVVM<any>) => {
+        tempQueue.sort((m1: MVVM, m2: MVVM) => {
             if (m1.$IsParentOf(m2)) {
                 return -1;
             }

@@ -1,15 +1,21 @@
 import { MVVM, React, VNode } from "../src";
 import "./game.scss";
-class Square extends MVVM<{ onClick: Function, value: string }>{
+class Square extends MVVM {
+    constructor(private props: { onClick: Function, value: string }) {
+        super(props);
+    }
     protected $Render(): VNode {
-        return <div className="square" onClick={this.$props.onClick}>
-            {this.$props.value}
+        return <div className="square" onClick={this.props.onClick}>
+            {this.props.value}
         </div>
     }
 }
-class Board extends MVVM<{ squares: string[], onClick: Function }>{
+class Board extends MVVM {
+    constructor(private props: { squares: string[], onClick: Function }) {
+        super(props);
+    }
     renderSquare(index: number) {
-        return <Square value={this.$props.squares[index]} onClick={() => this.$props.onClick(index)}></Square>
+        return <Square value={this.props.squares[index]} onClick={() => this.props.onClick(index)}></Square>
     }
     protected $Render(): VNode {
         return <div>
@@ -33,7 +39,7 @@ class Board extends MVVM<{ squares: string[], onClick: Function }>{
 
 
 }
-export class Game extends MVVM<{}>{
+export class Game extends MVVM {
     squares: string[] = Array(9).fill(null);
     historys: string[][] = [];
     xIsNext = true;

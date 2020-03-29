@@ -14,7 +14,7 @@ export class VNode {
     private parent: VNode = null;
 
     /**关联的组件实例，当type='custom'有效 */
-    private mvvm: MVVM<any>;
+    private mvvm: MVVM;
     /**关联的实际dom元素 */
     private dom: (HTMLElement | Text);
     /**节点类型 */
@@ -52,10 +52,10 @@ export class VNode {
     SetText(text: string) {
         this.text = text;
     }
-    SetMvvm(component: MVVM<any>) {
+    SetMvvm(component: MVVM) {
         this.mvvm = component;
     }
-    GetInstance() {
+    GetMvvm() {
         return this.mvvm;
     }
     GetParent() {
@@ -87,8 +87,8 @@ export class VNode {
         let index = this.children.indexOf(child);
         index++;
         while (index < this.children.length) {
-            let child = this.children[index];
-            let doms = child.Doms;
+            let c = this.children[index];
+            let doms = c.Doms;
             if (doms.length > 0)
                 return { dom: doms[0], isparent: false };
             index++;
@@ -187,22 +187,23 @@ export class VNode {
                 ) {
                     let oldStyle = this.attrs.style;
                     let newStyle = newAttrs.style;
-                    for (let key in oldStyle) {
-                        if (!newStyle[key]) {
-                            (this.dom as HTMLElement).style[key] = '';
+
+                    Object.keys(oldStyle).forEach(k => {
+                        if (!newStyle[k]) {
+                            (this.dom as HTMLElement).style[k] = '';
                         } else {
-                            if (newStyle[key] != oldStyle[key]) {
-                                (this.dom as HTMLElement).style[key] =
-                                    newStyle[key];
+                            if (newStyle[k] != oldStyle[k]) {
+                                (this.dom as HTMLElement).style[k] =
+                                    newStyle[k];
                             }
                         }
-                    }
-                    for (let key in newStyle) {
-                        if (!oldStyle[key]) {
-                            (this.dom as HTMLElement).style[key] =
-                                newStyle[key];
+                    })
+                    Object.keys(newStyle).forEach(k => {
+                        if (!oldStyle[k]) {
+                            (this.dom as HTMLElement).style[k] =
+                                newStyle[k];
                         }
-                    }
+                    });
                     return;
                 }
                 if (isEvent) {
@@ -341,22 +342,22 @@ export class VNode {
             }
         });
     }
-    GetNearestAncestorMvvm(): MVVM<any> {
+    GetNearestAncestorMvvm(): MVVM {
         if (this.type == "custom")
             return this.mvvm;
         return this.parent && this.parent.GetNearestAncestorMvvm();
     }
-    GetFirstChildMvvm(): MVVM<any> {
+    GetFirstChildMvvm(): MVVM {
         if (this.type == "custom")
             return this.mvvm;
-        for (let i = 0; i < this.children.length; i++) {
-            let mvvm = this.children[i].GetFirstChildMvvm();
+        for (let child of this.children) {
+            let mvvm = child.GetFirstChildMvvm();
             if (mvvm)
                 return mvvm;
         }
         return null;
     }
-    GetAllMvvm(): MVVM<any>[] {
+    GetAllMvvm(): MVVM[] {
         if (this.type == "custom")
             return [this.mvvm];
         if (this.type == 'text')

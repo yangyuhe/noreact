@@ -10,7 +10,7 @@ declare global {
     }
 }
 
-export class TodoList extends MVVM<{}> {
+export class TodoList extends MVVM {
     private list: { id: number, content: string, time: string }[] = []
     private generate = 0;
     private showpop = false;
@@ -22,7 +22,7 @@ export class TodoList extends MVVM<{}> {
             {this.showpop ? <Add onAdd={this.onadd.bind(this)} editItem={this.editTarget}></Add> : null}
         </div>
     }
-    $onRendered() {
+    $didMounted() {
         this.$on("delete", id => {
             this.list = this.list.filter(item => item.id != id);
         });
@@ -69,13 +69,26 @@ export class TodoList extends MVVM<{}> {
 
 }
 
-class ToDoItem extends MVVM<ITodoItem> {
+class ToDoItem extends MVVM {
     private counter: number = 0;
+    private timmer;
+    constructor(private props: ITodoItem) {
+        super(props);
+    }
+    $didMounted() {
+        this.timmer = setInterval(() => {
+            this.counter++;
+            console.log("--")
+        }, 1000);
+    }
+    $willUnMount() {
+        clearInterval(this.timmer);
+    }
     protected $Render(): VNode {
         return <div className="todo-item">
             <div className="todo-content">
-                <div className="todo-time">{this.$props.time} |counter:{this.counter}</div>
-                <div className="todo-des">{this.$props.content}</div>
+                <div className="todo-time">{this.props.time} |counter:{this.counter}</div>
+                <div className="todo-des">{this.props.content}</div>
                 <input type="text" />
             </div>
             <div className="operations">
@@ -86,13 +99,8 @@ class ToDoItem extends MVVM<ITodoItem> {
             </div>
         </div>
     }
-    $onInit() {
-        setInterval(() => {
-            this.counter++;
-        }, 1000);
-    }
     doAction(action: string) {
-        this.$emitUp(action, this.$props.id);
+        this.$emitUp(action, this.props.id);
     }
 }
 interface ITodoItem {
@@ -100,13 +108,14 @@ interface ITodoItem {
     content: string,
     time: string
 }
-class Add extends MVVM<{ onAdd: (content: string, time: string, id: number) => void, editItem: ITodoItem }>{
+class Add extends MVVM {
     cotent: string = "";
     time: string = "";
-    $onInit() {
-        if (this.$props.editItem) {
-            this.cotent = this.$props.editItem.content;
-            this.time = this.$props.editItem.time;
+    constructor(private props: { onAdd: (content: string, time: string, id: number) => void, editItem: ITodoItem }) {
+        super(props);
+        if (this.props.editItem) {
+            this.cotent = this.props.editItem.content;
+            this.time = this.props.editItem.time;
         }
     }
     protected $Render(): VNode {
@@ -124,7 +133,7 @@ class Add extends MVVM<{ onAdd: (content: string, time: string, id: number) => v
         </Fragment>
     }
     onadd() {
-        this.$props.onAdd(this.cotent, this.time, this.$props.editItem == null ? null : this.$props.editItem.id);
+        this.props.onAdd(this.cotent, this.time, this.props.editItem == null ? null : this.props.editItem.id);
         this.cotent = '';
         this.time = '';
     }

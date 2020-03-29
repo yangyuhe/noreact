@@ -6,9 +6,9 @@ export function ServerRender(isServerRender: boolean) {
 const applyAttr: { [name: string]: (elem: HTMLElement, value: any) => boolean } = {
     style: (elem, value) => {
         if (toString.call(value) == '[object Object]') {
-            for (let key in value) {
+            Object.keys(value).forEach(key => {
                 elem.style[key] = value[key];
-            }
+            });
             return true;
         }
         return false;
@@ -24,8 +24,15 @@ const applyAttr: { [name: string]: (elem: HTMLElement, value: any) => boolean } 
         return true;
     },
     value(elem, value) {
-        if (elem instanceof HTMLInputElement) {
+        if (elem instanceof HTMLInputElement || elem instanceof HTMLSelectElement) {
             elem.value = value;
+            return true;
+        }
+        return false;
+    },
+    checked(elem, value) {
+        if (elem instanceof HTMLInputElement) {
+            elem.checked = value;
             return true;
         }
         return false;
@@ -34,9 +41,9 @@ const applyAttr: { [name: string]: (elem: HTMLElement, value: any) => boolean } 
 const removeAttr: { [name: string]: (elem: HTMLElement, value: any) => boolean } = {
     style: (elem, value) => {
         if (toString.call(value) == '[object Object]') {
-            for (let key in value) {
+            Object.keys(value).forEach(key => {
                 elem.style[key] = '';
-            }
+            })
             return true;
         }
         return false;
@@ -60,9 +67,9 @@ const serializeAttr: { [name: string]: (value: any) => string } = {
     style: value => {
         if (toString.call(value) == '[object Object]') {
             let str = '';
-            for (let key in value) {
+            Object.keys(value).forEach(key => {
                 str += `${key}=${value[key]};`;
-            }
+            })
             return `style="${str}"`;
         } else {
             return 'style=' + value;
