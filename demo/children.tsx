@@ -18,8 +18,8 @@ class Body extends MVVM {
 }
 class App extends MVVM {
     menus = ["home", "about us"];
-    usernameRef: Ref;
-    todolistRef: Ref;
+    usernameRef: Ref<HTMLElement>;
+    todolistRef: Ref<TodoList>;
     constructor() {
         super();
         this.usernameRef = new Ref();

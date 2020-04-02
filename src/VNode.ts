@@ -291,15 +291,15 @@ export class VNode {
         if (this.type == 'standard') {
             let elem = document.createElement(this.tag);
             this.dom = elem;
+            this.children.forEach(child => {
+                let doms = child.ToDom();
+                doms.forEach(dom => elem.appendChild(dom));
+            });
             Object.keys(this.attrs).forEach(key => {
                 let eventName = EventName(key);
                 if (eventName) {
                     elem.addEventListener(eventName, this.attrs[key]);
                 } else ApplyAttr(elem, key, this.attrs[key]);
-            });
-            this.children.forEach(child => {
-                let doms = child.ToDom();
-                doms.forEach(dom => elem.appendChild(dom));
             });
             return [elem];
         }

@@ -3,7 +3,6 @@ const ManifestPlugin = require('webpack-manifest-plugin');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const fs = require('fs');
 
 let shouldClearDir = process.argv[1].indexOf('webpack-dev-server') == -1;
 let plugins = [
@@ -14,20 +13,9 @@ let plugins = [
 ];
 if (shouldClearDir) plugins.push(new CleanWebpackPlugin(['bundle']));
 
-// let entries={bootstrap:path.resolve('www','bootstrap.ts')};
-let entries = {};
-let dir = path.resolve(__dirname, 'demo');
-let files = fs.readdirSync(dir);
-files.forEach(file => {
-    if (file.endsWith('.tsx')) {
-        let name = file.substr(0, file.length - 4);
-        if (name == 'children') entries[name] = path.resolve(dir, file);
-    }
-});
-
 module.exports = {
     mode: 'development',
-    entry: entries,
+    entry: { main: path.resolve(__dirname, 'demo/index.tsx') },
     devtool: 'source-map',
     resolve: {
         extensions: ['.ts', '.tsx', '.js']

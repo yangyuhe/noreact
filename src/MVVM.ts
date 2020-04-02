@@ -32,7 +32,7 @@ export abstract class MVVM {
     /**销毁函数 */
     protected $willUnMount(): void { }
     /**该组建的渲染方法，该方法必须返回一个虚拟树 */
-    protected abstract $Render(): VNode;
+    protected abstract $Render(): any;
 
     /**向所有父级发送消息 */
     protected $emitUp(event: string, ...data: any[]) {
@@ -75,7 +75,8 @@ export abstract class MVVM {
     $ToDom(): (HTMLElement | Text)[] {
         if (this.$isdirty) {
             //remount时可能需要
-            this.$root = this.$Render();
+            let root = this.$Render();
+            this.$root = this.$checkNoVNode(root);
             this.$isdirty = false;
         }
         this.$hasRenderedDom = true;
@@ -84,7 +85,9 @@ export abstract class MVVM {
         return doms;
     }
     $ToHtml(): string {
-        return this.$Render().ToHtml();
+        let root = this.$Render();
+        let _root = this.$checkNoVNode(root);
+        return _root.ToHtml();
     }
     $GetRoot() {
         if (!this.$root) this.$DoRender();
@@ -113,7 +116,8 @@ export abstract class MVVM {
 
             let old = React.target;
             React.target = this;
-            let newroot = this.$Render();
+            let _newroot = this.$Render();
+            let newroot = this.$checkNoVNode(_newroot);
             React.target = old;
 
             React.ChangeMode('deep');
@@ -163,7 +167,8 @@ export abstract class MVVM {
 
         let old = React.target;
         React.target = this;
-        this.$root = this.$Render();
+        let root = this.$Render();
+        this.$root = this.$checkNoVNode(root);
         if (!this.$attachedVNode) {
             this.$attachedVNode = new VNode("custom");
             this.$attachedVNode.SetMvvm(this);
@@ -387,6 +392,18 @@ export abstract class MVVM {
             return;
         }
         this.$props[key] = value;
+    }
+    $checkNoVNode(value: any) {
+        if (value instanceof VNode)
+            return value;
+        if (value && (typeof value.toString == 'function')) {
+            let str = value.toString();
+            let textnode = new VNode("text");
+            textnode.SetText(str);
+            textnode.SetAttr("key", "$1");
+            return textnode;
+        }
+        throw new Error("$Render function return invalid value");
     }
 
     $Rendered() {
