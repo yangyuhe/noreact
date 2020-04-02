@@ -14,7 +14,17 @@ const applyAttr: { [name: string]: (elem: HTMLElement, value: any) => boolean } 
         return false;
     },
     className: (elem, value) => {
-        elem.setAttribute('class', value);
+        if (value instanceof Array) {
+            elem.setAttribute('class', value.join(" "));
+        } else
+            elem.setAttribute('class', value);
+        return true;
+    },
+    class: (elem, value) => {
+        if (value instanceof Array) {
+            elem.setAttribute('class', value.join(" "));
+        } else
+            elem.setAttribute('class', value);
         return true;
     },
     key: (elem, value) => {
@@ -76,6 +86,9 @@ const serializeAttr: { [name: string]: (value: any) => string } = {
         }
     },
     className: value => {
+        if (value instanceof Array) {
+            value = value.join(" ");
+        }
         return 'class=' + value;
     },
     key: value => {
