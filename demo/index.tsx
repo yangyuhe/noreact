@@ -10,10 +10,11 @@ import { Chapter08 } from "./chapter08";
 import { Chapter09 } from "./chapter09";
 import { Chapter10 } from "./chapter10";
 import { Chapter11 } from "./chapter11";
+import { Chapter12 } from "./chapter12";
 export class App extends MVVM {
     protected $Render(): any {
         let chapters = [<Hello />, <Chapter02 />, <Chapter03 />, <Chapter04 />, <Chapter05 />,
-        <Chapter06 />, <Chapter07 />, <Chapter08 />, <Chapter09 />, <Chapter10 />, <Chapter11 />];
+        <Chapter06 />, <Chapter07 />, <Chapter08 />, <Chapter09 />, <Chapter10 />, <Chapter11 />, <Chapter12 />];
         return <Fragment>
             {chapters.map((item, index) => {
                 return [<h2>第{index + 1}章</h2>, item, <hr />];
