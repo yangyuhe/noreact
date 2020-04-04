@@ -1,73 +1,50 @@
 import { MVVM, React, Fragment } from "../src";
 
-class Person {
-    constructor(public name: string, public age: number) {
-
+class UserState {
+    islogin = false;
+    username: string = "";
+    login() {
+        this.islogin = true;
+        this.username = "Tom"
     }
-    changeName() {
-        this.name = "(" + this.name + ")";
-    }
-    changeAge() {
-        this.age++;
+    logout() {
+        this.islogin = false;
+        this.username = "";
     }
 }
-let person = new Person("foo", 0);
-class PersonCard extends MVVM {
-    person: Person = null;
-    constructor() {
-        super();
-        this.person = person;
-    }
+let state = new UserState();
+class Tab1 extends MVVM {
+    state: UserState = state;
     $Render() {
         return <Fragment>
             <h1>Person Card</h1>
-            <div>{this.person.name}</div>
+            <div>登录状态:{this.state.islogin ? '已登录:' + this.state.username : '未登录'}</div>
         </Fragment>
+    }
+}
+class Tab2 extends MVVM {
+    state: UserState = state;
+    $Render() {
+        return <button onClick={this.click.bind(this)}>{this.state.islogin ? '退出' : '登录'}</button>
+    }
+    click() {
+        if (this.state.islogin)
+            this.state.logout();
+        else
+            this.state.login();
+    }
+}
 
-    }
-}
-class UserCenter extends MVVM {
-    person: Person = null;
-    constructor() {
-        super();
-        this.person = person;
-    }
-    $willUnMount() {
-        console.log("user destroyed")
-    }
-    $Render() {
-        return <Fragment>
-            <h1>User Center</h1>
-            <div>Name:{this.person.name}</div>
-            <div>Age:{this.person.age}</div>
-        </Fragment>
-    }
-}
-class Operation extends MVVM {
-    person: Person = null;
-    constructor() {
-        super();
-        this.person = person;
-    }
-    $Render() {
-        return <Fragment>
-            <button onClick={this.person.changeName.bind(person)}>change name</button>
-            <button onClick={this.person.changeAge.bind(person)}>change age</button>
-        </Fragment>
-    }
-}
-export class Tabs extends MVVM {
-    curTab = 'oper';
+export class NoRedux extends MVVM {
+    curTab = 'tab1';
     $Render() {
         return <div className="tabs-container">
             <div className="tabs">
-                <button onClick={this.tab.bind(this, 'oper')} className="tab">oper</button>
-                <button onClick={this.tab.bind(this, 'PersonCard')} className="personcard">PersonCard</button>
-                <button onClick={this.tab.bind(this, 'UserCenter')} className="usercenter">UserCenter</button>
+                <button onClick={this.tab.bind(this, 'tab1')} className="tab">tab1</button>
+                <button onClick={this.tab.bind(this, 'tab2')} className="personcard">tab2</button>
             </div>
-            {this.curTab == 'oper' ? <Operation></Operation> : null}
-            {this.curTab == 'PersonCard' ? <PersonCard></PersonCard> : null}
-            {this.curTab == 'UserCenter' ? <UserCenter></UserCenter> : null}
+            {this.curTab == 'tab1' ? <Tab1 /> : null}
+            {this.curTab == 'tab2' ? <Tab2 /> : null}
         </div>
     }
     tab(name: string) {

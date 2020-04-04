@@ -1,24 +1,18 @@
-let events: { [name: string]: Function[] } = {};
+import { MVVM } from "./MVVM"
+let events: { [name: string]: { cb: Function, mvvm: MVVM }[] } = {};
 
-export function RegisterEvent(event: string, func: Function) {
+export function RegisterEvent(event: string, func: Function, mvvm: MVVM) {
     if (!events[event]) {
         events[event] = [];
     }
-    events[event].push(func);
+    events[event].push({ cb: func, mvvm: mvvm });
 }
-export function UnregisterEvent(event: string, func?: Function) {
-    if (!func) {
-        events[event] = [];
-    } else {
-        if (events[event]) {
-            events[event] = events[event].filter(item => item !== func);
-        }
-    }
-}
+
 export function TriggerEvent(event: string, ...args: any[]) {
     if (events[event]) {
-        events[event].forEach(func => {
-            func(...args);
+        events[event] = events[event].filter(item => !item.mvvm.$IsDestroyed());
+        events[event].forEach(item => {
+            item.cb(...args);
         });
     }
 }

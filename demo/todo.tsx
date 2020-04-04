@@ -4,7 +4,7 @@ import "./style.scss";
 declare global {
     namespace JSX {
         interface IntrinsicAttributes {
-            ref?: Ref;
+            ref?: Ref<any>;
             key?: any;
         }
     }
@@ -78,7 +78,6 @@ class ToDoItem extends MVVM {
     $didMounted() {
         this.timmer = setInterval(() => {
             this.counter++;
-            console.log("--")
         }, 1000);
     }
     $willUnMount() {

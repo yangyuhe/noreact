@@ -1,5 +1,5 @@
 import { Diff } from './diff';
-import { RegisterEvent, TriggerEvent, UnregisterEvent } from './event-center';
+import { RegisterEvent, TriggerEvent } from './event-center';
 import { VNode } from './VNode';
 import { React, GetId, Ref } from './react';
 import { InsertQueue } from './refresh';
@@ -49,21 +49,11 @@ export abstract class MVVM {
     ) {
         if (!this.$eventRegister[event]) this.$eventRegister[event] = [];
         this.$eventRegister[event].push(callback);
-        RegisterEvent(event, callback);
-    }
-    protected $cancel(event, callback?: Function) {
-        if (!callback) {
-            this.$eventRegister[event] = [];
-        } else {
-            if (this.$eventRegister[event]) {
-                this.$eventRegister[event] = this.$eventRegister[event].filter(item => item !== callback);
-            }
-        }
-        UnregisterEvent(event, callback);
+        RegisterEvent(event, callback, this);
     }
     /**发送一个全局事件 */
     protected $broadcast(event: string, ...data: any[]) {
-        TriggerEvent(event, ...data);
+        TriggerEvent(event, data, this);
     }
     /**触发该组件的某个事件监听 */
     $Trigger(event, ...data: any[]) {
@@ -179,7 +169,12 @@ export abstract class MVVM {
         return this.$root;
     }
     private $watchObject(obj: any, keys?: string[]) {
-        if (!(obj instanceof Ref) && !(obj instanceof VNode) && !(obj instanceof MVVM && (!keys || keys.length == 0)) && toString.call(obj) == '[object Object]' || toString.call(obj) == '[object Array]') {
+        let isNotRef = !(obj instanceof Ref);
+        let isNotVnode = !(obj instanceof VNode);
+        let isNotMvvm = !(obj instanceof MVVM) || keys && keys.length > 0;
+        let isObj = toString.call(obj) == '[object Object]' && isNotRef && isNotVnode && isNotMvvm;
+        let isArr = toString.call(obj) == '[object Array]';
+        if (isObj || isArr) {
             let watchers: MVVM[] = [];
             ((keys && keys.length > 0 && keys) || Object.keys(obj)).forEach(key => {
                 let descriptor = Object.getOwnPropertyDescriptor(obj, key);
@@ -217,26 +212,13 @@ export abstract class MVVM {
         }
     }
     private $watchArray(arr, watchers: MVVM[]) {
-        this.$overwriteArrayMethods(arr, 'pop', watchers);
-        this.$overwriteArrayMethods(arr, 'push', watchers);
-        this.$overwriteArrayMethods(arr, 'splice', watchers);
-        this.$overwriteArrayMethods(arr, 'unshift', watchers);
-        this.$overwriteArrayMethods(arr, 'shift', watchers);
-    }
-    private $overwriteArrayMethods(arr: any[], methodname: string, watchers: MVVM[]) {
-        let method = arr[methodname];
-        if (typeof method == 'function') {
-            let descriptor = Object.getOwnPropertyDescriptor(arr, methodname);
-            if (!descriptor || descriptor.configurable) {
-                Object.defineProperty(arr, methodname, {
-                    value: function () {
-                        watchers.forEach(item => item.$Dirty());
-                        return method.apply(this, arguments);
-                    },
-                    configurable: false
-                });
-            }
+        let oldproto = Object.getPrototypeOf(arr);
+        if (oldproto && oldproto.$marked == 'noreact') {
+            return;
         }
+        let proto = this.getArrayProto(arr, watchers);
+        Object.setPrototypeOf(arr, proto);
+        Object.setPrototypeOf(proto, oldproto);
     }
     private $useOld(oldNode: VNode, newNode: VNode) {
         if (oldNode.GetType() == 'custom') {
@@ -465,5 +447,38 @@ export abstract class MVVM {
     }
     $GetProps() {
         return this.$props;
+    }
+    private getArrayProto(arr: any[], watchers: MVVM[]) {
+        let oldpush = arr.push;
+        let oldpop = arr.pop;
+        let oldsplice = arr.splice;
+        let oldshift = arr.shift;
+        let oldunshift = arr.unshift;
+        let method = (name, func, args) => {
+            watchers.forEach(item => item.$Dirty());
+            let res = func.apply(arr, Array.prototype.slice.call(args));
+            if (name == "push" || name == "unshift") {
+                this.$watchObject(arr);
+            }
+            return res;
+        }
+        return {
+            $marked: "noreact",
+            push() {
+                return method("push", oldpush, arguments);
+            },
+            pop() {
+                return method("pop", oldpop, arguments)
+            },
+            splice() {
+                return method("slice", oldsplice, arguments)
+            },
+            shift() {
+                return method("shift", oldshift, arguments)
+            },
+            unshift() {
+                return method("unshift", oldunshift, arguments)
+            }
+        }
     }
 }
