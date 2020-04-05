@@ -8,7 +8,7 @@ class NoReact {
     private mode: 'deep' | 'shallow' = 'deep';
     public target: MVVM;
     createElement(
-        Elem: string | (typeof MVVM) | typeof Fragment,
+        Elem: string | (typeof MVVM) | (typeof Fragment) | ((props: any) => any),
         attrs: { [key: string]: any },
         ...children: (VNode | VNode[] | string)[]
     ): VNode {
@@ -56,6 +56,10 @@ class NoReact {
                     vnode.SetAttr(key, attrs[key]);
                 })
             }
+            return vnode;
+        }
+        if (typeof Elem == "function") {
+            let vnode = (Elem as Function)(attrs);
             return vnode;
         }
     }
