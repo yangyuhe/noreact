@@ -159,18 +159,7 @@ var MVVM = /** @class */ (function () {
         if (!this.$eventRegister[event])
             this.$eventRegister[event] = [];
         this.$eventRegister[event].push(callback);
-        event_center_1.RegisterEvent(event, callback);
-    };
-    MVVM.prototype.$cancel = function (event, callback) {
-        if (!callback) {
-            this.$eventRegister[event] = [];
-        }
-        else {
-            if (this.$eventRegister[event]) {
-                this.$eventRegister[event] = this.$eventRegister[event].filter(function (item) { return item !== callback; });
-            }
-        }
-        event_center_1.UnregisterEvent(event, callback);
+        event_center_1.RegisterEvent(event, callback, this);
     };
     /**发送一个全局事件 */
     MVVM.prototype.$broadcast = function (event) {
@@ -178,7 +167,7 @@ var MVVM = /** @class */ (function () {
         for (var _i = 1; _i < arguments.length; _i++) {
             data[_i - 1] = arguments[_i];
         }
-        event_center_1.TriggerEvent.apply(void 0, [event].concat(data));
+        event_center_1.TriggerEvent(event, data, this);
     };
     /**触发该组件的某个事件监听 */
     MVVM.prototype.$Trigger = function (event) {
@@ -194,7 +183,8 @@ var MVVM = /** @class */ (function () {
     MVVM.prototype.$ToDom = function () {
         if (this.$isdirty) {
             //remount时可能需要
-            this.$root = this.$Render();
+            var root = this.$Render();
+            this.$root = this.$checkNoVNode(root);
             this.$isdirty = false;
         }
         this.$hasRenderedDom = true;
@@ -204,7 +194,9 @@ var MVVM = /** @class */ (function () {
         return doms;
     };
     MVVM.prototype.$ToHtml = function () {
-        return this.$Render().ToHtml();
+        var root = this.$Render();
+        var _root = this.$checkNoVNode(root);
+        return _root.ToHtml();
     };
     MVVM.prototype.$GetRoot = function () {
         if (!this.$root)
@@ -233,7 +225,8 @@ var MVVM = /** @class */ (function () {
             react_1.React.ChangeMode('shallow');
             var old = react_1.React.target;
             react_1.React.target = this;
-            var newroot = this.$Render();
+            var _newroot = this.$Render();
+            var newroot = this.$checkNoVNode(_newroot);
             react_1.React.target = old;
             react_1.React.ChangeMode('deep');
             var same = MVVM.$compareVNode(this.$root, newroot);
@@ -282,7 +275,8 @@ var MVVM = /** @class */ (function () {
         keys.length > 0 && this.$watchObject(this, keys);
         var old = react_1.React.target;
         react_1.React.target = this;
-        this.$root = this.$Render();
+        var root = this.$Render();
+        this.$root = this.$checkNoVNode(root);
         if (!this.$attachedVNode) {
             this.$attachedVNode = new VNode_1.VNode("custom");
             this.$attachedVNode.SetMvvm(this);
@@ -294,7 +288,12 @@ var MVVM = /** @class */ (function () {
     };
     MVVM.prototype.$watchObject = function (obj, keys) {
         var _this = this;
-        if (!(obj instanceof react_1.Ref) && !(obj instanceof VNode_1.VNode) && !(obj instanceof MVVM && (!keys || keys.length == 0)) && toString.call(obj) == '[object Object]' || toString.call(obj) == '[object Array]') {
+        var isNotRef = !(obj instanceof react_1.Ref);
+        var isNotVnode = !(obj instanceof VNode_1.VNode);
+        var isNotMvvm = !(obj instanceof MVVM) || keys && keys.length > 0;
+        var isObj = toString.call(obj) == '[object Object]' && isNotRef && isNotVnode && isNotMvvm;
+        var isArr = toString.call(obj) == '[object Array]';
+        if (isObj || isArr) {
             var watchers_1 = [];
             ((keys && keys.length > 0 && keys) || Object.keys(obj)).forEach(function (key) {
                 var descriptor = Object.getOwnPropertyDescriptor(obj, key);
@@ -329,26 +328,13 @@ var MVVM = /** @class */ (function () {
         }
     };
     MVVM.prototype.$watchArray = function (arr, watchers) {
-        this.$overwriteArrayMethods(arr, 'pop', watchers);
-        this.$overwriteArrayMethods(arr, 'push', watchers);
-        this.$overwriteArrayMethods(arr, 'splice', watchers);
-        this.$overwriteArrayMethods(arr, 'unshift', watchers);
-        this.$overwriteArrayMethods(arr, 'shift', watchers);
-    };
-    MVVM.prototype.$overwriteArrayMethods = function (arr, methodname, watchers) {
-        var method = arr[methodname];
-        if (typeof method == 'function') {
-            var descriptor = Object.getOwnPropertyDescriptor(arr, methodname);
-            if (!descriptor || descriptor.configurable) {
-                Object.defineProperty(arr, methodname, {
-                    value: function () {
-                        watchers.forEach(function (item) { return item.$Dirty(); });
-                        return method.apply(this, arguments);
-                    },
-                    configurable: false
-                });
-            }
+        var oldproto = Object.getPrototypeOf(arr);
+        if (oldproto && oldproto.$marked == 'noreact') {
+            return;
         }
+        var proto = this.getArrayProto(arr, watchers);
+        Object.setPrototypeOf(arr, proto);
+        Object.setPrototypeOf(proto, oldproto);
     };
     MVVM.prototype.$useOld = function (oldNode, newNode) {
         if (oldNode.GetType() == 'custom') {
@@ -502,6 +488,18 @@ var MVVM = /** @class */ (function () {
         }
         this.$props[key] = value;
     };
+    MVVM.prototype.$checkNoVNode = function (value) {
+        if (value instanceof VNode_1.VNode)
+            return value;
+        if (value && (typeof value.toString == 'function')) {
+            var str = value.toString();
+            var textnode = new VNode_1.VNode("text");
+            textnode.SetText(str);
+            textnode.SetAttr("key", "$1");
+            return textnode;
+        }
+        throw new Error("$Render function return invalid value");
+    };
     MVVM.prototype.$Rendered = function () {
         this.$isDestroyed = false;
         this.$root.Rendered();
@@ -562,6 +560,40 @@ var MVVM = /** @class */ (function () {
     };
     MVVM.prototype.$GetProps = function () {
         return this.$props;
+    };
+    MVVM.prototype.getArrayProto = function (arr, watchers) {
+        var _this = this;
+        var oldpush = arr.push;
+        var oldpop = arr.pop;
+        var oldsplice = arr.splice;
+        var oldshift = arr.shift;
+        var oldunshift = arr.unshift;
+        var method = function (name, func, args) {
+            watchers.forEach(function (item) { return item.$Dirty(); });
+            var res = func.apply(arr, Array.prototype.slice.call(args));
+            if (name == "push" || name == "unshift") {
+                _this.$watchObject(arr);
+            }
+            return res;
+        };
+        return {
+            $marked: "noreact",
+            push: function () {
+                return method("push", oldpush, arguments);
+            },
+            pop: function () {
+                return method("pop", oldpop, arguments);
+            },
+            splice: function () {
+                return method("slice", oldsplice, arguments);
+            },
+            shift: function () {
+                return method("shift", oldshift, arguments);
+            },
+            unshift: function () {
+                return method("unshift", oldunshift, arguments);
+            }
+        };
     };
     return MVVM;
 }());
@@ -854,6 +886,10 @@ var VNode = /** @class */ (function () {
         if (this.type == 'standard') {
             var elem_1 = document.createElement(this.tag);
             this.dom = elem_1;
+            this.children.forEach(function (child) {
+                var doms = child.ToDom();
+                doms.forEach(function (dom) { return elem_1.appendChild(dom); });
+            });
             Object.keys(this.attrs).forEach(function (key) {
                 var eventName = attribute_1.GetEventAttrName(key);
                 if (eventName) {
@@ -861,10 +897,6 @@ var VNode = /** @class */ (function () {
                 }
                 else
                     attribute_1.ApplyAttr(elem_1, key, _this.attrs[key]);
-            });
-            this.children.forEach(function (child) {
-                var doms = child.ToDom();
-                doms.forEach(function (dom) { return elem_1.appendChild(dom); });
             });
             return [elem_1];
         }
@@ -982,7 +1014,19 @@ var applyAttr = {
         return false;
     },
     className: function (elem, value) {
-        elem.setAttribute('class', value);
+        if (value instanceof Array) {
+            elem.setAttribute('class', value.join(" "));
+        }
+        else
+            elem.setAttribute('class', value);
+        return true;
+    },
+    class: function (elem, value) {
+        if (value instanceof Array) {
+            elem.setAttribute('class', value.join(" "));
+        }
+        else
+            elem.setAttribute('class', value);
         return true;
     },
     key: function (elem, value) {
@@ -1045,6 +1089,9 @@ var serializeAttr = (_a = {
             }
         },
         className: function (value) {
+            if (value instanceof Array) {
+                value = value.join(" ");
+            }
             return 'class=' + value;
         },
         key: function (value) {
@@ -1331,32 +1378,22 @@ function getOpers(square, oldset, newset, o2n, n2o) {
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var events = {};
-function RegisterEvent(event, func) {
+function RegisterEvent(event, func, mvvm) {
     if (!events[event]) {
         events[event] = [];
     }
-    events[event].push(func);
+    events[event].push({ cb: func, mvvm: mvvm });
 }
 exports.RegisterEvent = RegisterEvent;
-function UnregisterEvent(event, func) {
-    if (!func) {
-        events[event] = [];
-    }
-    else {
-        if (events[event]) {
-            events[event] = events[event].filter(function (item) { return item !== func; });
-        }
-    }
-}
-exports.UnregisterEvent = UnregisterEvent;
 function TriggerEvent(event) {
     var args = [];
     for (var _i = 1; _i < arguments.length; _i++) {
         args[_i - 1] = arguments[_i];
     }
     if (events[event]) {
-        events[event].forEach(function (func) {
-            func.apply(void 0, args);
+        events[event] = events[event].filter(function (item) { return !item.mvvm.$IsDestroyed(); });
+        events[event].forEach(function (item) {
+            item.cb.apply(item, args);
         });
     }
 }
@@ -1452,6 +1489,10 @@ var NoReact = /** @class */ (function () {
                 });
             }
             return vnode_3;
+        }
+        if (typeof Elem == "function") {
+            var vnode = Elem(attrs);
+            return vnode;
         }
     };
     NoReact.prototype.flatten = function (prefix, children, res) {
