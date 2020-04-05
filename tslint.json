@@ -15,7 +15,8 @@
         "comment-format": false,
         "no-unused-expression": false,
         "no-string-literal": false,
-        "no-angle-bracket-type-assertion": false
+        "no-angle-bracket-type-assertion": false,
+        "only-arrow-functions": false
     },
     "rulesDirectory": []
 }
